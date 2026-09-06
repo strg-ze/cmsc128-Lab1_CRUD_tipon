@@ -8,7 +8,7 @@ def dashboard():
 
 @app.route("/tasks")
 def tasks():
-    return ("task page not available")
+    return render_template("tasks.html")
 
 @app.route("/calendar")
 def calendar():

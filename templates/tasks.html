@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title%} Tasks {%endblock%}
+{% block content %}
+<div class="tasks-layout">
+    <section class="task-list-panel">
+        <div class="panel-header">
+            <span class="filter-badge">School</span>
+            <a href="#">See other pages</a>
+        </div>
+        <h5 class="list-label">Today</h5>
+        <ul class="task-list">
+            <li class="task-item">
+                <input type="checkbox">
+                <span class="task-name">Sample task</span>
+                <span class="task-desc">details about stuff</span>
+                <time class="task-time">9:50</time>
+                <button class="task-menu">⋮</button>
+            </li>
+        </ul>
+    </section>
+
+    <section class="add-task-panel">
+        <div class="panel-header">
+            <h3>Add New Task</h3>
+        </div>
+
+        <form action="{{url_for('tasks')}}" method="POST">
+            <label for="task-name">Name</label>
+            <input type="text" id="task-name" name="task-name">
+
+            <div class="form-row">
+                <div>
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description">
+                </div>
+
+                <div>
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority">
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label for="due-date">Due Date</label>
+                    <input type="date" id="due-date" name="due-date">
+                </div>
+                <div>
+                    <label for="time">Time</label>
+                    <input type="time" id="time" name="time">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label for="tags">Tags</label>
+                    <input type="text" id="tags" name="tags" placeholder="#tags">
+                </div>
+                <div>
+                    <label for="category">Category</label>
+                    <select id="category" name="category">
+                        <option value="school">School</option>
+                        <option value="personal">Personal</option>
+                        <option value="work">Work</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit">Add Task</button>
+        </form>
+    </section>
+
+</div>
+
+{%endblock%}
