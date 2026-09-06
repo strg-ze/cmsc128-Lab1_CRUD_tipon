@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title%} Dashboard {%endblock%}
+{% block content %}
+
+<div class="dashboard-layout">
+    <section class="today-panel">
+        <div class="panel-header">
+            <h2>Today</h2>
+            <a href="{{url_for('tasks')}}">View Pages</a>
+        </div>
+
+        <ul class="task-list">
+            <li class="task-item">
+                <input type="checkbox">
+                <span class="task-name">Sample task</span>
+                <time class="task-time">9:50</time>
+            </li>
+        </ul>
+
+        <button class="add-task-btn">Add Task</button>
+
+    </section>
+    
+    <div class="right-column">
+        <section class="calendar-panel">
+            <div class="panel-header">
+                <h4>Calendar</h4>
+                <span class="calendar-month">September</span>
+            </div>
+            <div class="calendar-grid">
+
+            </div>
+
+        </section>
+
+        <section class="upcoming-panel">
+            <div class="panel-header">
+                <h3>Upcoming</h3>
+                <a href="{{url_for('tasks')}}">View All</a>
+            </div>
+
+            <ul class="task-list">
+                <li class="task-item">
+                    <span class="task-name">Sample task</span>
+                    <time class="task-date">Tuesday</time>
+                </li>
+            </ul>
+        </section>
+    </div>
+</div>
+
+{%endblock%}
