@@ -9,13 +9,15 @@
         </div>
         <h5 class="list-label">Today</h5>
         <ul class="task-list">
+            {% for task in tasks %}
             <li class="task-item">
-                <input type="checkbox">
-                <span class="task-name">Sample task</span>
-                <span class="task-desc">details about stuff</span>
-                <time class="task-time">9:50</time>
+                <input type="checkbox" {%if task['completed'] %} checked{%endif%}>
+                <span class="task-name">{{task['name']}}</span>
+                <span class="task-desc">{{task['description']}}</span>
+                <time class="task-time">{{task['time']}}</time>
                 <button class="task-menu">⋮</button>
             </li>
+            {% endfor %}
         </ul>
     </section>
 
