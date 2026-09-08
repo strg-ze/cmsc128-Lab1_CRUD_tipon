@@ -15,7 +15,11 @@
                 <span class="task-name">{{task['name']}}</span>
                 <span class="task-desc">{{task['description']}}</span>
                 <time class="task-time">{{task['time']}}</time>
-                <button class="task-menu">⋮</button>
+                
+                <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" class="delete-form" onsubmit="return confirm('Delete this task?');">
+                    <button type="submit" class="task-delete">Delete</button>
+                </form>
+                    
             </li>
             {% endfor %}
         </ul>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from init_db import get_db_connection
 from datetime import date
 
@@ -42,6 +42,14 @@ def tasks():
     all_tasks = conn.execute('SELECT * FROM tasks WHERE is_visible = 1').fetchall()
     conn.close()
     return render_template("tasks.html", tasks = all_tasks)
+
+@app.route("/tasks/delete/<int:task_id>", methods=['POST'])
+def delete_task(task_id):
+    conn = get_db_connection()
+    conn.execute('UPDATE tasks SET is_visible = 0 WHERE id = ?', (task_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('tasks'))
 
 @app.route("/calendar")
 def calendar():
