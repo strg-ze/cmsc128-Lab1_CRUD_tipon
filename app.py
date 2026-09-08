@@ -51,6 +51,36 @@ def delete_task(task_id):
     conn.close()
     return redirect(url_for('tasks'))
 
+@app.route("/tasks/edit/<int:task_id>")
+def edit_task(task_id):
+    conn = get_db_connection()
+    task = conn.execute('SELECT * FROM tasks WHERE id = ?', (task_id,)).fetchone()
+    all_tasks = conn.execute('SELECT * FROM tasks WHERE is_visible = 1').fetchall()
+    conn.close()
+    return render_template("tasks.html", tasks=all_tasks, edit_task= task)
+
+@app.route("/tasks/update/<int:task_id>", methods=['POST'])
+def update_task(task_id):
+    conn = get_db_connection()
+    conn.execute(
+        'UPDATE tasks SET name = ?, description = ?, priority = ?, due_date = ?, time = ?, tags = ?, category = ? WHERE id = ?',
+            (
+                request.form['task-name'],
+                request.form['description'],
+                request.form['priority'],
+                request.form['due-date'],
+                request.form['time'],
+                request.form['tags'],
+                request.form['category'], 
+                task_id          
+            )
+    )
+    conn.commit()
+    conn.close()
+    return redirect(url_for('tasks'))
+
+    
+
 @app.route("/calendar")
 def calendar():
     return ("calendar page not available")

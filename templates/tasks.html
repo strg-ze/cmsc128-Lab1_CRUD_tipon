@@ -16,6 +16,7 @@
                 <span class="task-desc">{{task['description']}}</span>
                 <time class="task-time">{{task['time']}}</time>
                 
+                <a href="{{url_for('edit_task', task_id=task['id'])}}" class="task-edit">Edit</a>
                 <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" class="delete-form" onsubmit="return confirm('Delete this task?');">
                     <button type="submit" class="task-delete">Delete</button>
                 </form>
@@ -27,25 +28,31 @@
 
     <section class="add-task-panel">
         <div class="panel-header">
-            <h3>Add New Task</h3>
+            <h3>{{'Edit Task' if edit_task else 'Add New Task'}}</h3>
         </div>
 
-        <form action="{{url_for('tasks')}}" method="POST">
+        <form action=
+            "{% if edit_task%}
+                {{url_for('update_task', task_id=edit_task['id'])}} 
+            {%else%}
+                {{url_for('tasks')}}
+            {%endif%}" method="POST">
+
             <label for="task-name">Name</label>
-            <input type="text" id="task-name" name="task-name">
+            <input type="text" id="task-name" name="task-name" value="{{ edit_task['name'] if edit_task else ''}}">
 
             <div class="form-row">
                 <div>
                     <label for="description">Description</label>
-                    <input type="text" id="description" name="description">
+                    <input type="text" id="description" name="description" value="{{ edit_task['description'] if edit_task else ''}}">
                 </div>
 
                 <div>
                     <label for="priority">Priority</label>
                     <select id="priority" name="priority">
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
+                        <option value="high" {% if edit_task and edit_task['priority'] == 'high' %} selected {%endif%}>High</option>
+                        <option value="medium" {% if edit_task and edit_task['priority'] == 'medium' %} selected {%endif%}>Medium</option>
+                        <option value="low" {% if edit_task and edit_task['priority'] == 'low' %} selected {%endif%}>Low</option>
                     </select>
                 </div>
             </div>
@@ -53,30 +60,30 @@
             <div class="form-row">
                 <div>
                     <label for="due-date">Due Date</label>
-                    <input type="date" id="due-date" name="due-date">
+                    <input type="date" id="due-date" name="due-date" value="{{ edit_task['due_date'] if edit_task else ''}}" >
                 </div>
                 <div>
                     <label for="time">Time</label>
-                    <input type="time" id="time" name="time">
+                    <input type="time" id="time" name="time" value="{{ edit_task['time'] if edit_task else ''}}">
                 </div>
             </div>
 
             <div class="form-row">
                 <div>
                     <label for="tags">Tags</label>
-                    <input type="text" id="tags" name="tags" placeholder="#tags">
+                    <input type="text" id="tags" name="tags" placeholder="#tags" value="{{ edit_task['tags'] if edit_task else ''}}">
                 </div>
                 <div>
                     <label for="category">Category</label>
                     <select id="category" name="category">
-                        <option value="school">School</option>
-                        <option value="personal">Personal</option>
-                        <option value="work">Work</option>
+                        <option value="school" {% if edit_task and edit_task['category'] == 'school' %} selected {%endif%}>School</option>
+                        <option value="personal" {% if edit_task and edit_task['category'] == 'personal' %} selected {%endif%}>Personal</option>
+                        <option value="work" {% if edit_task and edit_task['category'] == 'work' %} selected {%endif%}>Work</option>
                     </select>
                 </div>
             </div>
 
-            <button type="submit">Add Task</button>
+            <button type="submit">{{'Update Task' if edit_task else 'Add Task'}}</button>
         </form>
     </section>
 
