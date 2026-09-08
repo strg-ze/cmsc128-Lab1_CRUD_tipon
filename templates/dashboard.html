@@ -10,11 +10,13 @@
         </div>
 
         <ul class="task-list">
+            {% for task in today_tasks %}
             <li class="task-item">
-                <input type="checkbox">
-                <span class="task-name">Sample task</span>
-                <time class="task-time">9:50</time>
+                <input type="checkbox" {% if task['completed'] %}checked{% endif %}>
+                <span class="task-name">{{ task['name']}}</span>
+                <time class="task-time">{{ task['time']}}</time>
             </li>
+            {% endfor %}
         </ul>
 
         <button class="add-task-btn">Add Task</button>
@@ -40,10 +42,12 @@
             </div>
 
             <ul class="task-list">
+                {% for task in upcoming_tasks %}
                 <li class="task-item">
-                    <span class="task-name">Sample task</span>
-                    <time class="task-date">Tuesday</time>
+                    <span class="task-name">{{ task['name']}}</span>
+                    <time class="task-date">{{ task['due_date']}}</time>
                 </li>
+                {%endfor%}
             </ul>
         </section>
     </div>

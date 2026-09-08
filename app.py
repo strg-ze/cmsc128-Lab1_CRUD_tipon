@@ -1,12 +1,25 @@
 from flask import Flask, render_template, request
 from init_db import get_db_connection
-import sqlite3
+from datetime import date
 
 app = Flask(__name__)
 
 @app.route("/")
 def dashboard():
-    return render_template("dashboard.html")
+    conn = get_db_connection()
+    today = date.today().isoformat()
+
+    today_tasks = conn.execute(
+        'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (today,)
+    ).fetchall()
+
+    upcoming_tasks = conn.execute(
+        'SELECT * FROM tasks WHERE due_date > ? AND is_visible = 1', (today,)
+    ).fetchall()
+
+    conn.close()
+    
+    return render_template("dashboard.html", today_tasks=today_tasks, upcoming_tasks = upcoming_tasks)
 
 @app.route("/tasks", methods=['GET', 'POST'])
 def tasks():
