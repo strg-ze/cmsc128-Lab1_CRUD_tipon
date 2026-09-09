@@ -5,56 +5,67 @@ from datetime import date, datetime
 
 app = Flask(__name__)
 
+# -------------- template filters --------------
+@app.template_filter('format_date')
+def format_date(value):
+    if not value:
+        return ''
+    date_obj = datetime.strptime(value, '%Y-%m-%d')
+    return date_obj.strftime('%B %d')
+
+# -------------- helper functions --------------
+def get_task_days_in_month(conn, year, month):
+    month_prefix = f"{year}-{month:02d}-%"
+    rows = conn.execute(
+        'SELECT DISTINCT due_date FROM tasks WHERE due_date LIKE ? AND is_visible = 1', (month_prefix,)
+    ).fetchall()
+
+    task_days = set()
+    for row in rows:
+        day_number = int(row['due_date'].split('-')[2])
+        task_days.add(day_number)
+    return task_days
+
+def build_month_calendar(year, month, task_days):
+    cal = calendar.Calendar(firstweekday=6)
+    raw_weeks = cal.monthdayscalendar(year, month)
+
+    weeks = []
+    for week in raw_weeks:
+        week_data = []
+        for day in week:
+            if day == 0:
+                week_data.append(None)
+            else:
+                full_date = date(year, month, day).isoformat()
+                week_data.append({'day': day, 'date': full_date, 'has_tasks': day in task_days})
+        weeks.append(week_data)
+    return weeks
+
+def get_visible_tasks(conn, where_clause, params):
+    query = f'SELECT * FROM tasks WHERE is_visible = 1 AND {where_clause}'
+    return conn.execute(query, params).fetchall()
+
+## -------------- routes --------------
 @app.route("/")
 def dashboard():
     conn = get_db_connection()
     today = date.today()
     selected_date = request.args.get('date')
 
-    cal = calendar.Calendar(firstweekday=6)
-    month_days = cal.monthdayscalendar(today.year, today.month)
-
-    today_tasks = conn.execute(
-        'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (today.isoformat(),)
-    ).fetchall()
+    today_tasks = get_visible_tasks(conn, 'due_date = ?', (today.isoformat(),))
 
     if selected_date:
-        upcoming_tasks = conn.execute(
-            'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (selected_date,)
-        ).fetchall()
-        if selected_date == today.isoformat():
-            upcoming_label = "Today"
-        else:
-            upcoming_label = format_date(selected_date)
+        upcoming_tasks = get_visible_tasks(conn, 'due_date = ?', (selected_date,))
+        upcoming_label = "Today" if selected_date == today.isoformat() else format_date(selected_date)
         show_single_day = True
     else:
-        upcoming_tasks = conn.execute(
-            'SELECT * FROM tasks WHERE due_date > ? AND is_visible = 1', (today.isoformat(),)
-        ).fetchall()
+        upcoming_tasks = get_visible_tasks(conn, 'due_date > ?', (selected_date,))
         upcoming_label = "Upcoming"
         show_single_day = False
 
-
-    month_prefix = today.strftime('%Y-%m') + '-%'
-    task_dates_rows = conn.execute(
-        'SELECT DISTINCT due_date FROM tasks WHERE due_date LIKE ? AND is_visible = 1', (month_prefix,)
-    ).fetchall()
-
-    task_days = set()
-    for row in task_dates_rows:
-        day_number = int(row['due_date'].split('-')[2])
-        task_days.add(day_number)
-
-        month_days_dates = []
-    for week in month_days:
-        week_data = []
-        for day in week:
-            if day == 0:
-                week_data.append(None)
-            else:
-                full_date = date(today.year, today.month, day).isoformat()
-                week_data.append({'day': day, 'date': full_date, 'has_tasks': day in task_days})
-        month_days_dates.append(week_data)
+    task_days = get_task_days_in_month(conn, today.year, today.month)
+    month_days_dates = build_month_calendar(today.year, today.month, task_days)
     conn.close()
     
     return render_template(
@@ -68,19 +79,15 @@ def dashboard():
         show_single_day=show_single_day
         )
 
-@app.template_filter('format_date')
-def format_date(value):
-    if not value:
-        return ''
-    date_obj = datetime.strptime(value, '%Y-%m-%d')
-    return date_obj.strftime('%B %d')
 
 @app.route("/tasks", methods=['GET', 'POST'])
 def tasks():
     conn = get_db_connection()
+
     if request.method == 'POST':
         conn.execute(
-            'INSERT INTO tasks (name, description, priority, due_date, time, tags, category) VALUES(?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO tasks (name, description, priority, due_date, time, tags, category)'
+             'VALUES(?, ?, ?, ?, ?, ?, ?)',
             (
                 request.form['task-name'],
                 request.form['description'],
@@ -93,9 +100,10 @@ def tasks():
         )
         conn.commit()
 
-    all_tasks = conn.execute('SELECT * FROM tasks WHERE is_visible = 1').fetchall()
+    all_tasks = get_visible_tasks(conn, '1=1',())
     conn.close()
     return render_template("tasks.html", tasks = all_tasks)
+
 
 @app.route("/tasks/delete/<int:task_id>", methods=['POST'])
 def delete_task(task_id):
@@ -105,13 +113,15 @@ def delete_task(task_id):
     conn.close()
     return redirect(url_for('tasks', deleted=task_id))
 
+
 @app.route("/tasks/edit/<int:task_id>")
 def edit_task(task_id):
     conn = get_db_connection()
     task = conn.execute('SELECT * FROM tasks WHERE id = ?', (task_id,)).fetchone()
-    all_tasks = conn.execute('SELECT * FROM tasks WHERE is_visible = 1').fetchall()
+    all_tasks = get_visible_tasks(conn, '1=1', ())
     conn.close()
     return render_template("tasks.html", tasks=all_tasks, edit_task= task)
+
 
 @app.route("/tasks/update/<int:task_id>", methods=['POST'])
 def update_task(task_id):
@@ -133,6 +143,7 @@ def update_task(task_id):
     conn.close()
     return redirect(url_for('tasks'))
 
+
 @app.route("/tasks/complete/<int:task_id>", methods=['POST'])
 def complete_task(task_id):
     conn = get_db_connection()
@@ -142,6 +153,7 @@ def complete_task(task_id):
     conn.commit()
     conn.close()
     return redirect(request.referrer or url_for('tasks'))
+
 
 @app.route("/tasks/restore/<int:task_id>", methods=['POST'])
 def undo_task(task_id):
