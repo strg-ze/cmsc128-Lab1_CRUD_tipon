@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from init_db import get_db_connection
+import calendar
 from datetime import date
 
 app = Flask(__name__)
@@ -7,19 +8,59 @@ app = Flask(__name__)
 @app.route("/")
 def dashboard():
     conn = get_db_connection()
-    today = date.today().isoformat()
+    today = date.today()
+    selected_date = request.args.get('date')
+
+    cal = calendar.Calendar(firstweekday=6)
+    month_days = cal.monthdayscalendar(today.year, today.month)
 
     today_tasks = conn.execute(
-        'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (today,)
+        'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (today.isoformat(),)
     ).fetchall()
 
-    upcoming_tasks = conn.execute(
-        'SELECT * FROM tasks WHERE due_date > ? AND is_visible = 1', (today,)
+    if selected_date:
+        upcoming_tasks = conn.execute(
+            'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (selected_date,)
+        ).fetchall()
+        upcoming_label = selected_date
+    else:
+        upcoming_tasks = conn.execute(
+            'SELECT * FROM tasks WHERE due_date > ? AND is_visible = 1', (today.isoformat(),)
+        ).fetchall()
+        upcoming_label = "Upcoming"
+
+
+    month_prefix = today.strftime('%Y-%m') + '-%'
+    task_dates_rows = conn.execute(
+        'SELECT DISTINCT due_date FROM tasks WHERE due_date LIKE ? AND is_visible = 1', (month_prefix,)
     ).fetchall()
 
+    task_days = set()
+    for row in task_dates_rows:
+        day_number = int(row['due_date'].split('-')[2])
+        task_days.add(day_number)
+
+        month_days_dates = []
+    for week in month_days:
+        week_data = []
+        for day in week:
+            if day == 0:
+                week_data.append(None)
+            else:
+                full_date = date(today.year, today.month, day).isoformat()
+                week_data.append({'day': day, 'date': full_date, 'has_tasks': day in task_days})
+        month_days_dates.append(week_data)
     conn.close()
     
-    return render_template("dashboard.html", today_tasks=today_tasks, upcoming_tasks = upcoming_tasks)
+    return render_template(
+        "dashboard.html", 
+        today_tasks=today_tasks, 
+        upcoming_tasks = upcoming_tasks,
+        upcoming_label = upcoming_label,
+        month_days_dates=month_days_dates,
+        current_month=today.strftime('%B'),
+        today_day=today.day
+        )
 
 @app.route("/tasks", methods=['GET', 'POST'])
 def tasks():
@@ -92,8 +133,8 @@ def complete_task(task_id):
 
     
 
-@app.route("/calendar")
-def calendar():
+@app.route("/calendar_page")
+def calendar_page():
     return ("calendar page not available")
 
 if __name__ == "__main__":

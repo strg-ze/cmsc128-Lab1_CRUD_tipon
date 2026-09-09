@@ -35,17 +35,46 @@
         <section class="calendar-panel">
             <div class="panel-header">
                 <h4>Calendar</h4>
-                <span class="calendar-month">September</span>
+                <span class="calendar-month">{{current_month}}</span>
             </div>
-            <div class="calendar-grid">
-
-            </div>
-
+            <table class="calendar-grid">
+                <thead>
+                    <tr>
+                        <th>Sun</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%for week in month_days_dates %}
+                    <tr>
+                        {%for day in week %}
+                            {% if day is none %}
+                                <td></td>
+                            {%else%}
+                                <td class="calendar-day {%if day.day == today_day %} today {%endif%}">
+                                    <a href="{{url_for('dashboard', date=day.date)}}">
+                                        {{day.day}}
+                                        {% if day.has_tasks %}
+                                            <span class="task-dot"></span>
+                                        {%endif%}
+                                    </a>
+                                </td>
+                            {%endif%}
+                        {%endfor%}
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
         </section>
 
         <section class="upcoming-panel">
             <div class="panel-header">
-                <h3>Upcoming</h3>
+                <h3>{{upcoming_label}}</h3>
                 <a href="{{url_for('tasks')}}">View All</a>
             </div>
 
