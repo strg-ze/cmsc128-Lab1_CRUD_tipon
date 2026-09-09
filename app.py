@@ -60,7 +60,7 @@ def dashboard():
         upcoming_label = "Today" if selected_date == today.isoformat() else format_date(selected_date)
         show_single_day = True
     else:
-        upcoming_tasks = get_visible_tasks(conn, 'due_date > ?', (selected_date,))
+        upcoming_tasks = get_visible_tasks(conn, 'due_date > ?', (today.isoformat(),))
         upcoming_label = "Upcoming"
         show_single_day = False
 
