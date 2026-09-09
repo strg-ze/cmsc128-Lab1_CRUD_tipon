@@ -90,7 +90,7 @@ def delete_task(task_id):
     conn.execute('UPDATE tasks SET is_visible = 0 WHERE id = ?', (task_id,))
     conn.commit()
     conn.close()
-    return redirect(url_for('tasks'))
+    return redirect(url_for('tasks', deleted=task_id))
 
 @app.route("/tasks/edit/<int:task_id>")
 def edit_task(task_id):
@@ -129,6 +129,15 @@ def complete_task(task_id):
     conn.commit()
     conn.close()
     return redirect(request.referrer or url_for('tasks'))
+
+@app.route("/tasks/restore/<int:task_id>", methods=['POST'])
+def undo_task(task_id):
+    conn = get_db_connection()
+    conn.execute(
+        'UPDATE tasks SET is_visible = 1 WHERE id = ?', (task_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('tasks'))
 
 
     

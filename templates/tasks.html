@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 {% block title%} Tasks {%endblock%}
 {% block content %}
+{% if request.args.get('deleted') %}
+<div id="undo-notif" class="undo-notif">
+    Task deleted.
+    <form action = "{{ url_for('undo_task', task_id=request.args.get('deleted'))}}" method="POST" style="display: inline;">
+        <button type="submit" class="undo-btn">Undo</button>
+    </form>
+</div>
+
+<script>
+    setTimeout(function() {
+        const notif = document.getElementById('undo-notif');
+        if(notif) notif.style.display = 'none';
+    }, 5000
+    );
+</script>
+{% endif %}
+
 <div class="tasks-layout">
     <section class="task-list-panel">
         <div class="panel-header">

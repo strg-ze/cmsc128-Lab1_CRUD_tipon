@@ -176,7 +176,8 @@ body{
 
 .task-edit-btn,
 .task-delete,
-.add-task-btn {
+.add-task-btn,
+.undo-btn {
     display: inline-block;
     padding: 0.4rem 0.8rem;
     border: 1px solid #ccc;
@@ -192,7 +193,8 @@ body{
 
 .task-edit-btn:hover,
 .task-delete:hover,
-.add-task-btn:hover {
+.add-task-btn:hover,
+.undo-btn:hover {
     background-color: #f0f0f0;
 }
 
@@ -253,3 +255,20 @@ body{
 .calendar-day a:hover {
     background-color: #f0f0f0;
 }
+
+.undo-notif {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 100;
+}
+
