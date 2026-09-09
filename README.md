@@ -95,5 +95,5 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
 
 ## Screenshots
 
-![dashboard](image-1.png)
-![tasks](image-2.png)
+![dashboard](/screenshots/image-1.png)
+![tasks](/screenshots/image-2.png)
