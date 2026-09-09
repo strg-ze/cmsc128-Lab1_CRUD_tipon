@@ -153,3 +153,12 @@ body{
     border-radius: 8px;
     padding: 1.25rem;
 }
+
+.complete-form {
+    display: inline;
+}
+
+.task-item:has(input[type="checkbox"]:checked) .task-name {
+    text-decoration: line-through;
+    color: #999;
+}

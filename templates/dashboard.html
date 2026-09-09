@@ -12,7 +12,10 @@
         <ul class="task-list">
             {% for task in today_tasks %}
             <li class="task-item">
-                <input type="checkbox" {% if task['completed'] %}checked{% endif %}>
+                <form action="{{ url_for('complete_task', task_id = task['id'])}}" method ="POST" class="complete-form">
+                    <input type="checkbox" onchange="this.form.submit()" {% if task['completed'] %}checked{% endif %}>
+                </form>
+                
                 <span class="task-name">{{ task['name']}}</span>
                 <time class="task-time">{{ task['time']}}</time>
             </li>
