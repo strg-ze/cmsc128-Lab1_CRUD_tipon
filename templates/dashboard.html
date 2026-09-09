@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% block title%} Dashboard {%endblock%}
 {% block content %}
+<h1 class="page-title">Dashboard</h1>
 
 <div class="dashboard-layout">
     <section class="today-panel">
         <div class="panel-header">
-            <h2>Today</h2>
-            <a href="{{url_for('tasks')}}">View Pages</a>
+            <h2>Today's Tasks</h2>
+            <a href="{{url_for('tasks')}}">View All Tasks</a>
         </div>
 
         <ul class="task-list">
@@ -82,7 +83,11 @@
                 {% for task in upcoming_tasks %}
                 <li class="task-item">
                     <span class="task-name">{{ task['name']}}</span>
-                    <time class="task-date">{{ task['due_date']}}</time>
+                    {% if show_single_day %}
+                        <time class="task-date">{{ task['time']}}</time>
+                    {%else%}
+                        <time class="task-date">{{ task['due_date']|format_date}}</time>
+                    {%endif%}
                 </li>
                 {%endfor%}
             </ul>

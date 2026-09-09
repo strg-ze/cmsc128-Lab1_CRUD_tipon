@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from init_db import get_db_connection
 import calendar
-from datetime import date
+from datetime import date, datetime
 
 app = Flask(__name__)
 
@@ -22,12 +22,17 @@ def dashboard():
         upcoming_tasks = conn.execute(
             'SELECT * FROM tasks WHERE due_date = ? AND is_visible = 1', (selected_date,)
         ).fetchall()
-        upcoming_label = selected_date
+        if selected_date == today.isoformat():
+            upcoming_label = "Today"
+        else:
+            upcoming_label = format_date(selected_date)
+        show_single_day = True
     else:
         upcoming_tasks = conn.execute(
             'SELECT * FROM tasks WHERE due_date > ? AND is_visible = 1', (today.isoformat(),)
         ).fetchall()
         upcoming_label = "Upcoming"
+        show_single_day = False
 
 
     month_prefix = today.strftime('%Y-%m') + '-%'
@@ -59,8 +64,16 @@ def dashboard():
         upcoming_label = upcoming_label,
         month_days_dates=month_days_dates,
         current_month=today.strftime('%B'),
-        today_day=today.day
+        today_day=today.day,
+        show_single_day=show_single_day
         )
+
+@app.template_filter('format_date')
+def format_date(value):
+    if not value:
+        return ''
+    date_obj = datetime.strptime(value, '%Y-%m-%d')
+    return date_obj.strftime('%B %d')
 
 @app.route("/tasks", methods=['GET', 'POST'])
 def tasks():

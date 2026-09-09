@@ -30,6 +30,11 @@ body{
     color:#333;
 }
 
+.page-title{
+    padding: 2rem 2rem 0;
+    font-size: 1.4rem;
+}
+
 .dashboard-layout{
     display:flex;
     gap: 1.5rem;
@@ -38,6 +43,12 @@ body{
 
 .today-panel{
     flex:1;
+}
+
+.today-panel .add-task-btn{
+    display:block;
+    width: fit-content;
+    margin: 1.5rem auto 0;
 }
 
 .right-column{
