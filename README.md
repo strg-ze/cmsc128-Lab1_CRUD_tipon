@@ -90,7 +90,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
 
 ### Expanded Requirements (2 of 3 implemented)
 
-1. **Undo on Delete** — after deleting, a toast notification appears with an Undo button; clicking it restores the task via the soft-delete flag.
+1. **Undo on Delete** — after deleting, a toast notification appears with an Undo button; clicking it restores the task.
 2. **Calendar View** — the Dashboard includes a calendar grid showing the current month, with a dot marking any day that has tasks due. Clicking a day filters the Upcoming panel to show that day's tasks instead.
 
 ## Screenshots
