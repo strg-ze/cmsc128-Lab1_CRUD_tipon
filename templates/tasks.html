@@ -41,7 +41,7 @@
             {%endif%}" method="POST">
 
             <label for="task-name">Name</label>
-            <input type="text" id="task-name" name="task-name" value="{{ edit_task['name'] if edit_task else ''}}">
+            <input type="text" id="task-name" name="task-name" required value="{{ edit_task['name'] if edit_task else ''}}">
 
             <div class="form-row">
                 <div>
@@ -62,7 +62,7 @@
             <div class="form-row">
                 <div>
                     <label for="due-date">Due Date</label>
-                    <input type="date" id="due-date" name="due-date" value="{{ edit_task['due_date'] if edit_task else ''}}" >
+                    <input type="date" id="due-date" name="due-date" required value="{{ edit_task['due_date'] if edit_task else ''}}" >
                 </div>
                 <div>
                     <label for="time">Time</label>
