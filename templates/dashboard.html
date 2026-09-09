@@ -16,13 +16,18 @@
                     <input type="checkbox" onchange="this.form.submit()" {% if task['completed'] %}checked{% endif %}>
                 </form>
                 
-                <span class="task-name">{{ task['name']}}</span>
+                <div class="task-info">
+                    <span class="task-name">{{ task['name']}}</span>
+                    <span class="task-desc">{{ task['description']}}</span>
+                    <span class="task-category">{{ task['category']}}</span>
+
+                </div>
                 <time class="task-time">{{ task['time']}}</time>
             </li>
             {% endfor %}
         </ul>
 
-        <button class="add-task-btn">Add Task</button>
+        <a href="{{ url_for('tasks')}}" class="add-task-btn"> + Add Task</a>
 
     </section>
     

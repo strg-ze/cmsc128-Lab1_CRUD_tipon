@@ -80,7 +80,7 @@ body{
 
 .task-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.75rem;
     padding: 0.6rem 0;
     border-bottom: 1px solid #eee;
@@ -90,12 +90,23 @@ body{
     border-bottom: none;
 }
 
-.task-name{
-    flex:1;
+.task-info{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.2rem;
+}
+
+.task-desc,
+.task-category {
+    font-size: 0.8rem;
+    color: #777;
 }
 
 .task-time,
 .task-date {
+    margin-left: auto;
+    white-space: nowrap;
     font-size: 0.85rem;
     color: #777;
 }
@@ -141,7 +152,7 @@ body{
 .task-list-panel{
     flex: 1.5;
     background-color: #fff;
-    border: 1px solid color #ddd;
+    border: 1px solid #ddd;
     border-radius: 8px;
     padding: 1.25rem;
 }
@@ -161,4 +172,26 @@ body{
 .task-item:has(input[type="checkbox"]:checked) .task-name {
     text-decoration: line-through;
     color: #999;
+}
+
+.task-edit-btn,
+.task-delete,
+.add-task-btn {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #333;
+    font-size: 0.8rem;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    text-align: center;
+}
+
+.task-edit-btn:hover,
+.task-delete:hover,
+.add-task-btn:hover {
+    background-color: #f0f0f0;
 }
