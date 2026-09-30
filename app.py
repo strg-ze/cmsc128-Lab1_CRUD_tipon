@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-app.secret_key = os.eviron["SECRET_KEY"] #crashes at startup if key is missing (intentional)
+app.secret_key = os.environ["SECRET_KEY"] #crashes at startup if key is missing (intentional)
 
 
 # -------------- template filters --------------
