@@ -14,7 +14,6 @@ load_dotenv()
 app.secret_key = os.environ["SECRET_KEY"] #crashes at startup if key is missing (intentional)
 
 
-
 email_pattern = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 # -------------- template filters --------------
 @app.template_filter('format_date')
@@ -71,6 +70,19 @@ def no_cache_for_logged_in_pages(response):
     if "user_id" in session:
         response.headers["Cache-Control"] = "no-store"
     return response
+
+def get_current_user(conn):
+    return conn.execute(
+        "SELECT id, email, display_name, password_hash FROM users WHERE id = ?", (session["user_id"],),
+    ).fetchone()
+
+def render_profile(user, details_errors=None, password_errors=None, form=None):
+    return render_template (
+        "profile.html",
+        form=form or {"display_name": user["display_name"], "email": user["email"]},
+        details_errors=details_errors or {},
+        password_errors=password_errors or {}
+    )
 ## -------------- routes --------------
 @app.route("/")
 def landing():
@@ -200,7 +212,8 @@ def dashboard():
         month_days_dates=month_days_dates,
         current_month=today.strftime('%B'),
         today_day=today.day,
-        show_single_day=show_single_day
+        show_single_day=show_single_day,
+        display_name = session["display_name"]
         )
 
 
@@ -295,6 +308,94 @@ def undo_task(task_id):
     conn.commit()
     conn.close()
     return redirect(url_for('tasks'))
+
+@app.route("/profile", methods=['GET', 'POST'])
+@login_required
+def profile():
+    conn = get_db_connection()
+    user = get_current_user(conn)
+    return render_profile(user)
+
+@app.route("/profile/details", methods=["POST"])
+@login_required
+def profile_details():
+    display_name = request.form.get("display-name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    errors = {}
+
+    if not display_name:
+        errors["display_name"] = "Please enter a display name."
+    if not email:
+        errors["email"] = "Please enter your email address."
+    elif not email_pattern.fullmatch(email):
+        errors["email"] = "Please enter a valid email address"
+
+    conn = get_db_connection()
+    try:
+        user = get_current_user(conn)
+        if not errors:
+            other = conn.execute(
+                "SELECT id FROM users WHERE email = ? AND id != ?", (email, user["id"])
+            ).fetchone()
+            if other:
+                errors["email"] = "Another account already uses this email."
+
+        if not errors:
+                conn.execute(
+                    "UPDATE users SET email = ?, display_name = ? WHERE id = ?",
+                    (email, display_name, user["id"]),
+                )
+                conn.commit()
+                session["display_name"] = display_name
+                flash("Profile updated.", "success")
+                return redirect(url_for("profile"))
+        return render_profile(
+                user,
+                details_errors=errors,
+                form={"display_name": display_name, "email": email},
+            )
+    finally:
+        conn.close()
+
+@app.route("/profile/password", methods=["POST"])
+@login_required
+def profile_password():
+    current = request.form.get("current-password", "")
+    new = request.form.get("new-password", "")
+    confirm = request.form.get("confirm-password", "")
+    errors = {}
+
+    conn = get_db_connection()
+    try:
+        user = get_current_user(conn)
+        if user is None:
+            session.clear()
+            return redirect(url_for("login"))
+
+        if not check_password_hash(user["password_hash"], current):
+            errors["current"] = "Current password is incorrect."
+
+        if len(new) < 8:
+            errors["new"] = "New password must be at least 8 characters."
+        elif new == current:
+            errors["new"] = "New password must be different from the current one."
+        elif new != confirm:
+            errors["confirm"] = "Passwords do not match."
+
+        if not errors:
+            conn.execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                (generate_password_hash(new), user["id"]),  
+            )
+            conn.commit()
+            flash("Password changed.", "success")
+            return redirect(url_for("profile"))
+
+        return render_profile(user, password_errors=errors)
+    finally:
+        conn.close()
+
+
 
 
 if __name__ == "__main__":
