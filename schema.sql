@@ -1,5 +1,14 @@
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    display_name TEXT NOT NULL,    
+    password_hash TEXT NOT NULL
+);
+
+
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
     priority TEXT,
@@ -9,11 +18,4 @@ CREATE TABLE IF NOT EXISTS tasks (
     category TEXT,
     completed INTEGER DEFAULT 0,
     is_visible INTEGER DEFAULT 1
-);
-
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    display_name TEXT NOT NULL,    
-    password_hash TEXT NOT NULL
 );
