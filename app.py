@@ -28,7 +28,7 @@ def format_date(value):
 def get_task_days_in_month(conn, year, month):
     month_prefix = f"{year}-{month:02d}-%"
     rows = conn.execute(
-        'SELECT DISTINCT due_date FROM tasks WHERE due_date LIKE ? AND is_visible = 1', (month_prefix,)
+        'SELECT DISTINCT due_date FROM tasks WHERE due_date LIKE ? AND is_visible = 1 AND user_id=?' , (month_prefix, session["user_id"])
     ).fetchall()
 
     task_days = set()
@@ -54,13 +54,13 @@ def build_month_calendar(year, month, task_days):
     return weeks
 
 def get_visible_tasks(conn, where_clause, params):
-    query = f'SELECT * FROM tasks WHERE is_visible = 1 AND {where_clause}'
-    return conn.execute(query, params).fetchall()
+    query = f'SELECT * FROM tasks WHERE is_visible = 1 AND user_id = ? AND {where_clause}'
+    return conn.execute(query, (session["user_id"],)+params).fetchall()
 
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
-        if "user_id" != session:
+        if "user_id" not in session:
             flash("Please log in to continue.", "error")
             return redirect(url_for("login"))
         return view(*args, **kwargs)
@@ -68,13 +68,13 @@ def login_required(view):
 
 @app.after_request
 def no_cache_for_logged_in_pages(response):
-    if "user_id" == session:
+    if "user_id" in session:
         response.headers["Cache-Control"] = "no-store"
     return response
 ## -------------- routes --------------
 @app.route("/")
 def landing():
-    if "user_id" == session:
+    if "user_id" in session:
         return redirect(url_for("dashboard"))
     return render_template("landing.html")
 
@@ -171,6 +171,7 @@ def logout():
     return redirect(url_for("login"))
     
 @app.route("/dashboard")
+@login_required
 def dashboard():
     conn = get_db_connection()
     today = date.today()
@@ -204,14 +205,16 @@ def dashboard():
 
 
 @app.route("/tasks", methods=['GET', 'POST'])
+@login_required
 def tasks():
     conn = get_db_connection()
 
     if request.method == 'POST':
         conn.execute(
-            'INSERT INTO tasks (name, description, priority, due_date, time, tags, category)'
-             'VALUES(?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO tasks (user_id, name, description, priority, due_date, time, tags, category)'
+             'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
             (
+                session["user_id"],
                 request.form['task-name'],
                 request.form['description'],
                 request.form['priority'],
@@ -229,28 +232,31 @@ def tasks():
 
 
 @app.route("/tasks/delete/<int:task_id>", methods=['POST'])
+@login_required
 def delete_task(task_id):
     conn = get_db_connection()
-    conn.execute('UPDATE tasks SET is_visible = 0 WHERE id = ?', (task_id,))
+    conn.execute('UPDATE tasks SET is_visible = 0 WHERE id = ? AND user_id=?', (task_id, session["user_id"]))
     conn.commit()
     conn.close()
     return redirect(url_for('tasks', deleted=task_id))
 
 
 @app.route("/tasks/edit/<int:task_id>")
+@login_required
 def edit_task(task_id):
     conn = get_db_connection()
-    task = conn.execute('SELECT * FROM tasks WHERE id = ?', (task_id,)).fetchone()
+    task = conn.execute('SELECT * FROM tasks WHERE id = ? AND user_id = ?', (task_id, session["user_id"])).fetchone()
     all_tasks = get_visible_tasks(conn, '1=1', ())
     conn.close()
     return render_template("tasks.html", tasks=all_tasks, edit_task= task)
 
 
 @app.route("/tasks/update/<int:task_id>", methods=['POST'])
+@login_required
 def update_task(task_id):
     conn = get_db_connection()
     conn.execute(
-        'UPDATE tasks SET name = ?, description = ?, priority = ?, due_date = ?, time = ?, tags = ?, category = ? WHERE id = ?',
+        'UPDATE tasks SET name = ?, description = ?, priority = ?, due_date = ?, time = ?, tags = ?, category = ? WHERE id = ? AND user_id=?',
             (
                 request.form['task-name'],
                 request.form['description'],
@@ -259,7 +265,8 @@ def update_task(task_id):
                 request.form['time'],
                 request.form['tags'],
                 request.form['category'], 
-                task_id          
+                task_id,
+                session["user_id"]          
             )
     )
     conn.commit()
@@ -268,31 +275,27 @@ def update_task(task_id):
 
 
 @app.route("/tasks/complete/<int:task_id>", methods=['POST'])
+@login_required
 def complete_task(task_id):
     conn = get_db_connection()
-    task = conn.execute('SELECT completed FROM tasks WHERE id = ?', (task_id,)).fetchone()
+    task = conn.execute('SELECT completed FROM tasks WHERE id = ? AND user_id = ?', (task_id, session["user_id"])).fetchone()
     new_status = 0 if task ['completed'] else 1
-    conn.execute('UPDATE tasks SET completed = ? WHERE id = ?', (new_status, task_id))
+    conn.execute('UPDATE tasks SET completed = ? WHERE id = ? AND user_id = ?', (new_status, task_id, session["user_id"]))
     conn.commit()
     conn.close()
     return redirect(request.referrer or url_for('tasks'))
 
 
 @app.route("/tasks/restore/<int:task_id>", methods=['POST'])
+@login_required
 def undo_task(task_id):
     conn = get_db_connection()
     conn.execute(
-        'UPDATE tasks SET is_visible = 1 WHERE id = ?', (task_id,))
+        'UPDATE tasks SET is_visible = 1 WHERE id = ? AND user_id = ?', (task_id, session["user_id"]))
     conn.commit()
     conn.close()
     return redirect(url_for('tasks'))
 
-
-    
-
-@app.route("/calendar_page")
-def calendar_page():
-    return ("calendar page not available")
 
 if __name__ == "__main__":
     app.run(debug=True)
