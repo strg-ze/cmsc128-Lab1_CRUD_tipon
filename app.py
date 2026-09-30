@@ -1,17 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from init_db import get_db_connection
 import calendar
 from datetime import date, datetime
-
-app = Flask(__name__)
-
+#act2 imports
+import re
 import os
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
+app = Flask(__name__)
 
 load_dotenv()
 app.secret_key = os.environ["SECRET_KEY"] #crashes at startup if key is missing (intentional)
 
 
+
+email_pattern = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 # -------------- template filters --------------
 @app.template_filter('format_date')
 def format_date(value):
@@ -56,15 +59,65 @@ def get_visible_tasks(conn, where_clause, params):
 ## -------------- routes --------------
 @app.route("/")
 def landing():
+    if "user_id" == session:
+        return redirect(url_for("dashboard"))
     return render_template("landing.html")
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    return render_template("register.html")
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
+
+    errors = {}
+    form = {}
+    #clean entries
+    display_name = request.form.get("display-name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password  = request.form.get("password", "")
+    confirm = request.form.get("confirm-password", "")
+    form = {"display_name": display_name, "email": email} 
+
+    if not display_name:
+        errors["email"] = "Please enter a display name."
+
+    if not email:
+        errors["email"] = "Please enter your email address"
+    elif not email_pattern.fullmatch(email):
+        errors["email"] = "Please enter a valid email address."
+
+    if len(password) < 8:
+        errors["password"] = "Password must be at least 8 characters."
+    elif password != confirm:
+        errors["confirm"] = "Passwords do not match."
+
+    if not errors:
+        conn = get_db_connection()
+        try:
+            taken = conn.execute(
+                "SELECT id FROM users WHERE email = ?", (email,)
+            ).fetchone()
+
+            if taken:
+                errors["email"] = "An account with this email already exists."
+            else:
+                conn.execute(
+                    "INSERT INTO users (email, display_name, password_hash)"
+                    "VALUES (?, ?, ?)",
+                    (email, display_name, generate_password_hash(password)),
+                )
+                conn.commit()
+                flash("Account created! You can now log in.", "success")
+                return redirect(url_for("login"))
+        finally:
+            conn.close()
+
+    return render_template("register.html",
+                           errors=errors,
+                           form=form)
 
 @app.route("/login")
 def login():
-    return "Login page not yet implemented"
+    return render_template("login.html")
     
 @app.route("/dashboard")
 def dashboard():
