@@ -283,3 +283,54 @@ body{
     z-index: 100;
 }
 
+.app-title{
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #222;
+}
+
+.auth-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    min-height: calc(100vh - 4rem);
+    padding: 2rem;
+    text-align: center;
+}
+
+.auth-page h1{
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    margin-bottom: 1rem;
+}
+
+.btn-login,
+.btn-register {
+    display: block;
+    width: min(100%, 15rem);
+    padding: 0.7rem 1.25rem;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}
+
+.btn-login {
+    background-color: #333;
+    color: #fff;
+}
+.btn-login:hover {
+    background-color: #000;
+}
+
+.btn-register {
+    background-color: #fff;
+    color: #333;
+}
+.btn-register:hover {
+    background-color: #f0f0f0;
+}
