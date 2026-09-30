@@ -6,27 +6,37 @@
     <div class="auth-card">
         <h1> Login</h1>
 
+        {% if errors.form %}
+            <p class="form-error" role="alert">{{errors.form}}</p>
+        {%endif%}
         <form class="auth-form" method="POST" action="{{ url_for('login')}}" novalidate>
            
             <div class="form-field">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email"
+                    value="{{ email or ''}}"
+                    class="{{ 'has-error' if errors.email}}"
                     autocomplete="email" required>
-                    <!--error msg here-->
+                    {% if errors.email %}
+                        <p class="field-error">{{errors.email}}</p>
+                    {% endif %}
             </div>
 
             <div class="form-field">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password"
+                    class="{{ 'has-error' if errors.password}}"
                     autocomplete="new-password" required>
                 <small class="field-hont">At least 8 characters.</small>
-                    <!--error msg here-->
+                    {% if errors.password %}
+                        <p class="field-error">{{errors.password}}</p>
+                    {% endif %} 
             </div>
 
             <button type="submit" class="btn-submit">Login</button>
         </form>
 
-        <p class="auth-alt">Don't have an account? <a href="{{url_for('register')}}">Log In</a></p>
+        <p class="auth-alt">Don't have an account? <a href="{{url_for('register')}}">Sign In</a></p>
     </div>
 
 </section>
