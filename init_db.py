@@ -5,5 +5,16 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def init_db():
+    conn = get_db_connection()
+    try:
+        with open("schema.sql", encoding="utf-8") as file:
+            conn.executescript(file.read())
 
-print("Database initialized.")
+        conn.commit()
+        print("Database initialized.")
+    finally:
+        conn.close()
+
+if __name__ == "__main__":
+    init_db()
