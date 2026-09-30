@@ -7,22 +7,26 @@
 
     <div class="auth-card">
         <h2>Account details</h2>
-        <form class="auth-form" method="POST" action="" novalidate>
+        <form class="auth-form" method="POST" action="{{ url_for('profile_details') }}" novalidate>
             <div class="form-field">
                 <label for="display-name">Display name</label>
                 <input type="text" id="display-name" name="display-name"
-                       value=""
-                       class="" required>
-                <!--error here-->
+                       value="{{ form.display_name }}"
+                       class="{{ 'has-error' if details_errors.display_name }}" required>
+                {% if details_errors.display_name %}
+                    <p class="field-error">{{ details_errors.display_name }}</p>
+                {% endif %}
             </div>
 
             <div class="form-field">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email"
-                       value=""
-                       class=""
+                       value="{{ form.email }}"
+                       class="{{ 'has-error' if details_errors.email }}"
                        autocomplete="email" required>
-                <!--error here-->
+                {% if details_errors.email %}
+                    <p class="field-error">{{ details_errors.email }}</p>
+                {% endif %}
             </div>
 
             <button type="submit" class="btn-submit">Save changes</button>
@@ -32,30 +36,36 @@
 
     <div class="auth-card">
         <h2>Change password</h2>
-        <form class="auth-form" method="POST" action="" novalidate>
+        <form class="auth-form" method="POST" action="{{ url_for('profile_password') }}" novalidate>
             <div class="form-field">
                 <label for="current-password">Current password</label>
                 <input type="password" id="current-password" name="current-password"
-                       class=""
+                       class="{{ 'has-error' if password_errors.current }}"
                        autocomplete="current-password" required>
-                <!--error here-->
+                {% if password_errors.current %}
+                    <p class="field-error">{{ password_errors.current }}</p>
+                {% endif %}
             </div>
 
             <div class="form-field">
                 <label for="new-password">New password</label>
                 <input type="password" id="new-password" name="new-password"
-                       class=""
+                       class="{{ 'has-error' if password_errors.new }}"
                        autocomplete="new-password" required>
                 <small class="field-hint">At least 8 characters.</small>
-   
+                {% if password_errors.new %}
+                    <p class="field-error">{{ password_errors.new }}</p>
+                {% endif %}
             </div>
 
             <div class="form-field">
                 <label for="confirm-password">Confirm new password</label>
                 <input type="password" id="confirm-password" name="confirm-password"
-                       class=""
+                       class="{{ 'has-error' if password_errors.confirm }}"
                        autocomplete="new-password" required>
-    
+                {% if password_errors.confirm %}
+                    <p class="field-error">{{ password_errors.confirm }}</p>
+                {% endif %}
             </div>
 
             <button type="submit" class="btn-submit">Change password</button>
