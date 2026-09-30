@@ -480,5 +480,16 @@ body{
     border: 1px dashed #888;
     border-radius: 4px;
     font-size: 0.8rem;
-    word-break: break-all;    /* long tokens must wrap, not overflow the card */
+    word-break: break-all;    
+}
+
+.forgot-password {
+    align-self: flex-end;
+    font-size: 0.85rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
 }
