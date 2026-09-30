@@ -60,7 +60,7 @@ def landing():
 
 @app.route("/register")
 def register():
-    return "Register page not yet implemented"
+    return render_template("register.html")
 
 @app.route("/login")
 def login():
