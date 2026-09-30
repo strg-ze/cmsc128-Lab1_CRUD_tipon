@@ -3,6 +3,7 @@
     <ul class="nav-links">
         <li><a href="{{url_for('dashboard')}}">Dashboard</a></li>
         <li><a href="{{url_for('tasks')}}">Tasks</a></li>
-        <li><a href="{{url_for('calendar_page')}}">Calendar</a></li>
-    </ul>
+        <li><form action="{{ url_for('logout') }}" method="POST">
+    <button type="submit" class="logout-btn">Log Out</button>
+</form>
 </nav>
