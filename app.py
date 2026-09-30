@@ -5,6 +5,13 @@ from datetime import date, datetime
 
 app = Flask(__name__)
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+app.secret_key = os.eviron["SECRET_KEY"] #crashes at startup if key is missing (intentional)
+
+
 # -------------- template filters --------------
 @app.template_filter('format_date')
 def format_date(value):
@@ -48,6 +55,18 @@ def get_visible_tasks(conn, where_clause, params):
 
 ## -------------- routes --------------
 @app.route("/")
+def landing():
+    return render_template("landing.html")
+
+@app.route("/register")
+def register():
+    return "Register page not yet implemented"
+
+@app.route("/login")
+def login():
+    return "Login page not yet implemented"
+    
+@app.route("/dashboard")
 def dashboard():
     conn = get_db_connection()
     today = date.today()
