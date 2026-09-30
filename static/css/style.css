@@ -445,3 +445,40 @@ body{
     border-color: #c0605c;
     background-color: #fbeeed;
 }
+
+.profile-page {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.auth-card h2 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.cancel-link {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.form-notice {
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+    font-size: 0.85rem;
+}
+
+.demo-link {
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px dashed #888;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    word-break: break-all;    /* long tokens must wrap, not overflow the card */
+}
