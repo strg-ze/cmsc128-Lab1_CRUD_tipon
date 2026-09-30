@@ -309,12 +309,14 @@ def undo_task(task_id):
     conn.close()
     return redirect(url_for('tasks'))
 
-@app.route("/profile", methods=['GET', 'POST'])
+@app.route("/profile", methods=['GET'])
 @login_required
 def profile():
     conn = get_db_connection()
     user = get_current_user(conn)
+    conn.close()
     return render_profile(user)
+    
 
 @app.route("/profile/details", methods=["POST"])
 @login_required
