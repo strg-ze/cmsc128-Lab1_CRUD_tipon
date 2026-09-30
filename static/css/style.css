@@ -426,3 +426,22 @@ body{
 .auth-alt a {
     color: #333;
 }
+
+.flash {
+    margin: 1rem 2rem 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 0.9rem;
+}
+
+.flash-success {
+    border-color: #6aa36f;
+    background-color: #edf7ee;
+}
+
+.flash-error {
+    border-color: #c0605c;
+    background-color: #fbeeed;
+}

@@ -1,0 +1,34 @@
+{%extends "landing_base.html" %}
+{% block title %} Login {%endblock%}
+{%block content%}
+
+<section class="auth-page">
+    <div class="auth-card">
+        <h1> Login</h1>
+
+        <form class="auth-form" method="POST" action="{{ url_for('login')}}" novalidate>
+           
+            <div class="form-field">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email"
+                    autocomplete="email" required>
+                    <!--error msg here-->
+            </div>
+
+            <div class="form-field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"
+                    autocomplete="new-password" required>
+                <small class="field-hont">At least 8 characters.</small>
+                    <!--error msg here-->
+            </div>
+
+            <button type="submit" class="btn-submit">Login</button>
+        </form>
+
+        <p class="auth-alt">Don't have an account? <a href="{{url_for('register')}}">Log In</a></p>
+    </div>
+
+</section>
+
+{%endblock%}
