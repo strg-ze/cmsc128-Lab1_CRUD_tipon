@@ -6,7 +6,8 @@ from datetime import date, datetime
 import re
 import os
 from dotenv import load_dotenv
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 app = Flask(__name__)
 
 load_dotenv()
@@ -56,6 +57,20 @@ def get_visible_tasks(conn, where_clause, params):
     query = f'SELECT * FROM tasks WHERE is_visible = 1 AND {where_clause}'
     return conn.execute(query, params).fetchall()
 
+def login_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" != session:
+            flash("Please log in to continue.", "error")
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
+
+@app.after_request
+def no_cache_for_logged_in_pages(response):
+    if "user_id" == session:
+        response.headers["Cache-Control"] = "no-store"
+    return response
 ## -------------- routes --------------
 @app.route("/")
 def landing():
@@ -115,9 +130,45 @@ def register():
                            errors=errors,
                            form=form)
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return render_template("login.html")
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
+
+    errors = {}
+    email = ""
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not email:
+            errors["email"] = "Please enter your email address"
+        if not password:
+            errors["password"] = "Please enter your password"
+
+        if not errors:
+            conn = get_db_connection()
+            user = conn.execute(
+                "SELECT id, display_name, password_hash FROM users WHERE email = ?", (email,),
+            ).fetchone()
+            conn.close()
+
+            if user is None or not check_password_hash(user["password_hash"], password):
+                errors["form"] = "Invalid email or password."
+            else:
+                session.clear()
+                session["user_id"] = user["id"]
+                session["display_name"] = user["display_name"]
+                return redirect(url_for("dashboard"))
+
+    return render_template("login.html", errors=errors, email=email)
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("login"))
     
 @app.route("/dashboard")
 def dashboard():
