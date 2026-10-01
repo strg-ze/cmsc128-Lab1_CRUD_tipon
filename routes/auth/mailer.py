@@ -1,3 +1,4 @@
+import os
 from flask import current_app
 from flask_mailman import EmailMessage
 

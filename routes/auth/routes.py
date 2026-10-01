@@ -29,41 +29,41 @@ def register():
         confirm = request.form.get("confirm-password", "")
         form = {"display_name": display_name, "email": email} 
 
-    #validate
-    if not display_name:
-        errors["email"] = "Please enter a display name."
+        #validate
+        if not display_name:
+            errors["email"] = "Please enter a display name."
 
-    email_error = check_email(email)
-    if email_error:
-        errors["email"] = email_error
+        email_error = check_email(email)
+        if email_error:
+            errors["email"] = email_error
 
-    password_error = check_password(password)
-    if password_error:
-        errors["password"] = password_error
-    elif password != confirm:
-        errors["confirm"] = "Passwords do not match."
+        password_error = check_password(password)
+        if password_error:
+            errors["password"] = password_error
+        elif password != confirm:
+            errors["confirm"] = "Passwords do not match."
 
-    #check duplicates
-    if not errors:
-        conn = get_db_connection()
-        try:
-            taken = conn.execute(
-                "SELECT id FROM users WHERE email = ?", (email,)
-            ).fetchone()
+        #check duplicates
+        if not errors:
+            conn = get_db_connection()
+            try:
+                taken = conn.execute(
+                    "SELECT id FROM users WHERE email = ?", (email,)
+                ).fetchone()
 
-            if taken:
-                errors["email"] = "An account with this email already exists."
-            else:
-                conn.execute(
-                    "INSERT INTO users (email, display_name, password_hash)"
-                    "VALUES (?, ?, ?)",
-                    (email, display_name, generate_password_hash(password)),
-                )
-                conn.commit()
-                flash("Account created! You can now log in.", "success")
-                return redirect(url_for("auth.login"))
-        finally:
-            conn.close()
+                if taken:
+                    errors["email"] = "An account with this email already exists."
+                else:
+                    conn.execute(
+                        "INSERT INTO users (email, display_name, password_hash)"
+                        "VALUES (?, ?, ?)",
+                        (email, display_name, generate_password_hash(password)),
+                    )
+                    conn.commit()
+                    flash("Account created! You can now log in.", "success")
+                    return redirect(url_for("auth.login"))
+            finally:
+                conn.close()
 
     return render_template("register.html",
                            errors=errors,

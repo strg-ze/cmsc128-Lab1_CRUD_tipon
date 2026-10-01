@@ -26,7 +26,7 @@ def make_reset_token(user):
 
 def load_reset_user(conn, token): #returns the user a valid token belongs to
     try:
-        data = _serializer.loads(token, max_age=current_app.config["RESET_MAX_AGE"])
+        data = _serializer().loads(token, max_age=current_app.config["RESET_MAX_AGE"])
     except BadSignature:             
         return None
 
