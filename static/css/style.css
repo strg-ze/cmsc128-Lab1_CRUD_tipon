@@ -25,7 +25,8 @@ body{
     list-style: none;
 }
 
-.nav-links a{
+.nav-links a,
+.logout-btn {
     text-decoration: none;
     color:#333;
 }
@@ -452,6 +453,7 @@ body{
     align-items: center;
     gap: 1.5rem;
     padding: 2rem;
+    justify-content: center;
 }
 
 .auth-card h2 {
