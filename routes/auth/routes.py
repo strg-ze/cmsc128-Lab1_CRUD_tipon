@@ -31,7 +31,7 @@ def register():
 
         #validate
         if not display_name:
-            errors["email"] = "Please enter a display name."
+            errors["display_name"] = "Please enter a display name."
 
         email_error = check_email(email)
         if email_error:
