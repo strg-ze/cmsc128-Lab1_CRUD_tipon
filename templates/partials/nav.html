@@ -3,8 +3,8 @@
     <ul class="nav-links">
         <li><a href="{{url_for('dashboard')}}">Dashboard</a></li>
         <li><a href="{{url_for('tasks')}}">Tasks</a></li>
-        <li><a href="{{url_for('profile')}}">Profile</a></li>
-        <li><form action="{{ url_for('logout') }}" method="POST">
+        <li><a href="{{url_for('account.profile')}}">Profile</a></li>
+        <li><form action="{{ url_for('auth.logout') }}" method="POST">
     <button type="submit" class="logout-btn">Log Out</button>
 </form>
 </nav>

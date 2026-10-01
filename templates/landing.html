@@ -2,7 +2,7 @@
 {% block content %}
 <main class="auth-page">
     <h1>Welcome to Agenda</h1>
-    <a class="btn-login" href="{{ url_for('login')}}">Log In</a>
-    <a class="btn-register" href="{{ url_for('register')}}">Sign Up</a>
+    <a class="btn-login" href="{{ url_for('auth.login')}}">Log In</a>
+    <a class="btn-register" href="{{ url_for('auth.register')}}">Sign Up</a>
 </main>
  {% endblock %}

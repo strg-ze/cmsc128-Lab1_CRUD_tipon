@@ -9,7 +9,7 @@
         {% if errors.form %}
             <p class="form-error" role="alert">{{errors.form}}</p>
         {%endif%}
-        <form class="auth-form" method="POST" action="{{ url_for('login')}}" novalidate>
+        <form class="auth-form" method="POST" action="{{ url_for('auth.login')}}" novalidate>
            
             <div class="form-field">
                 <label for="email">Email</label>
@@ -32,12 +32,12 @@
                         <p class="field-error">{{errors.password}}</p>
                     {% endif %} 
             </div>
-            <a href="{{url_for('forgot_password')}}" class="forgot-password">Forgot password?</a>
+            <a href="{{url_for('recovery.forgot_password')}}" class="forgot-password">Forgot password?</a>
 
             <button type="submit" class="btn-submit">Login</button>
         </form>
 
-        <p class="auth-alt">Don't have an account? <a href="{{url_for('register')}}">Sign In</a></p>
+        <p class="auth-alt">Don't have an account? <a href="{{url_for('auth.register')}}">Sign In</a></p>
     </div>
 
 </section>

@@ -7,7 +7,7 @@
 
     <div class="auth-card">
         <h2>Account details</h2>
-        <form class="auth-form" method="POST" action="{{ url_for('profile_details') }}" novalidate>
+        <form class="auth-form" method="POST" action="{{ url_for('account.profile_details') }}" novalidate>
             <div class="form-field">
                 <label for="display-name">Display name</label>
                 <input type="text" id="display-name" name="display-name"
@@ -30,13 +30,13 @@
             </div>
 
             <button type="submit" class="btn-submit">Save changes</button>
-            <a class="cancel-link" href="{{ url_for('profile') }}">Cancel</a>
+            <a class="cancel-link" href="{{ url_for('account.profile') }}">Cancel</a>
         </form>
     </div>
 
     <div class="auth-card">
         <h2>Change password</h2>
-        <form class="auth-form" method="POST" action="{{ url_for('profile_password') }}" novalidate>
+        <form class="auth-form" method="POST" action="{{ url_for('account.profile_password') }}" novalidate>
             <div class="form-field">
                 <label for="current-password">Current password</label>
                 <input type="password" id="current-password" name="current-password"
