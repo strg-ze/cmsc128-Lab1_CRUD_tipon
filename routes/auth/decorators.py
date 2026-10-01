@@ -6,7 +6,7 @@ def login_required(view): #wraps route so it only runs for logged in users
     def wrapped(*args, **kwargs):
         if "user_id" not in session:
             flash("Please log in to continue.", "error")
-            return redirect(url_for("login"))
+            return redirect(url_for("auth.login"))
         return view(*args, **kwargs)
     return wrapped
 
