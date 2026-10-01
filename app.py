@@ -8,10 +8,24 @@ import os
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import hashlib
+from itsdangerous import URLSafeTimedSerializer, BadSignature
+from flask_mailman import Mail, EmailMessage
 app = Flask(__name__)
 
 load_dotenv()
 app.secret_key = os.environ["SECRET_KEY"] #crashes at startup if key is missing (intentional)
+serializer = URLSafeTimedSerializer(app.secret_key, salt="password-reset")
+RESET_MAX_AGE = 15 * 60
+
+app.config.update(
+    MAIL_SERVER=os.environ.get("MAIL_SERVER"),
+    MAIL_PORT=int(os.environ.get("MAIL_PORT", 587)),
+    MAIL_USE_TLS=True,                     
+    MAIL_USERNAME=os.environ.get("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.environ.get("MAIL_PASSWORD"),
+)
+mail = Mail(app)
 
 
 email_pattern = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
@@ -83,6 +97,47 @@ def render_profile(user, details_errors=None, password_errors=None, form=None):
         details_errors=details_errors or {},
         password_errors=password_errors or {}
     )
+
+def password_fingerprint(password_hash):
+    return hashlib.sha256(password_hash.encode()).hexdigest()[:16]
+
+
+def make_reset_token(user):
+    return serializer.dumps(
+        {"uid": user["id"], "fp": password_fingerprint(user["password_hash"])}
+    )
+
+
+def load_reset_user(conn, token):
+    try:
+        data = serializer.loads(token, max_age=RESET_MAX_AGE)
+    except BadSignature:             
+        return None
+
+    user = conn.execute(
+        "SELECT id, password_hash FROM users WHERE id = ?", (data["uid"],)
+    ).fetchone()
+
+    if user is None or data["fp"] != password_fingerprint(user["password_hash"]):
+        return None
+    return user
+
+
+def send_reset_email(to_email, link):
+    body = (
+        "Someone asked to reset the password for your Agenda account.\n\n"
+        f"Use this link within 15 minutes:\n{link}\n\n"
+        "If this wasn't you, ignore this email."
+    )
+    try:
+        EmailMessage(
+            subject="Reset your Agenda password",
+            body=body,
+            from_email=os.environ.get("MAIL_SENDER"),
+            to=[to_email],
+        ).send()
+    except Exception as exc:
+        app.logger.error("Reset email failed: %s", exc)
 ## -------------- routes --------------
 @app.route("/")
 def landing():
@@ -397,8 +452,67 @@ def profile_password():
     finally:
         conn.close()
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if "user_id" in session:
+        return redirect(url_for("profile"))
+
+    error = None
+    submitted = False
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+
+        if not email:
+            error = "Please enter your email address."
+        else:
+            conn = get_db_connection()
+            user = conn.execute(
+                "SELECT id, password_hash FROM users WHERE email = ?", (email,)
+            ).fetchone()
+            conn.close()
+
+            if user:
+                link = url_for("reset_password", token=make_reset_token(user), _external=True)
+                send_reset_email(email, link)
 
 
+            submitted = True
+
+    return render_template("forgot_password.html", error=error, submitted=submitted)
+
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    conn = get_db_connection()
+    try:
+        user = load_reset_user(conn, token)
+        if user is None:
+            flash("This reset link is invalid or has expired. Please request a new one.", "error")
+            return redirect(url_for("forgot_password"))
+
+        errors = {}
+        if request.method == "POST":
+            new = request.form.get("new-password", "")
+            confirm = request.form.get("confirm-password", "")
+
+            if len(new) < 8:
+                errors["password"] = "Password must be at least 8 characters."
+            elif new != confirm:
+                errors["confirm"] = "Passwords do not match."
+
+            if not errors:
+                conn.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (generate_password_hash(new), user["id"]),
+                )
+                conn.commit()
+                flash("Password updated. Please log in with your new password.", "success")
+                return redirect(url_for("login"))
+
+        return render_template("reset_password.html", errors=errors, token=token)
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
