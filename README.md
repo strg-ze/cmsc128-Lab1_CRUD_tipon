@@ -1,6 +1,6 @@
 # Agenda — CMSC128 Lab Activity 1 (CRUD)
 
-**Agenda** is a simple, functional to-do list web app built with Flask and SQLite, featuring a Dashboard view, a Tasks management page, task editing/deletion with undo, and a built-in calendar view.
+**Agenda** is a simple, functional to-do list web app built with Flask and SQLite, featuring a Dashboard view, a Tasks management page, task editing/deletion with undo, and a built-in calendar view. Activity 2 (this branch, `act2-accounts`) adds user accounts: registration, login/logout, per-user task data, profile management and email-based password recovery.
 
 ## Tech Stack
 
@@ -8,6 +8,8 @@
 - **Templating:** Jinja2 (Flask's built-in templating engine)
 - **Backend:** Flask (Python)
 - **Database:** SQLite
+- **Authentication:** Flask cookie-based sessions, Werkzeug password hashing, itsdangerous signed tokens for password reset
+- **Email:** Flask-Mailman (SMTP)
 
 ### Why this stack
 
@@ -23,7 +25,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
 - **Loops** (`{% for task in tasks %}...{% endfor %}`) — rendering each row returned from a database query as an `<li>`.
 - **Conditionals** (`{% if task['completed'] %}checked{% endif %}`) — conditionally applying attributes/styling based on task data.
 - **Variable printing** (`{{ task['name'] }}`) — inserting database values into the rendered HTML.
-
+ 
 ## How to Run Locally
 
 1. **Clone the repository**
@@ -31,6 +33,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     ```bash
     git clone https://github.com/strg-ze/cmsc128-Lab1_CRUD_tipon.git
     cd <your-repo-folder>
+    git checkout act2-accounts
     ```
     
 2. **Set up a virtual environment (recommended)**
@@ -46,8 +49,27 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     ```bash
     pip install -r requirements.txt
     ```
-    
-4. **Initialize the database**
+
+4. **Configure environment variables**
+
+    Create a `.env` file (or set these in your shell). Names must match what `routes/config.py` reads.
+
+    ```env
+    SECRET_KEY=change-me-to-a-long-random-string
+    MAIL_SERVER=smtp.gmail.com
+    MAIL_PORT=587
+    MAIL_USE_TLS=True
+    MAIL_USERNAME=your-address@example.com
+    MAIL_PASSWORD=your-app-password
+    MAIL_SENDER=your-address@example.com
+    ```
+
+    - `SECRET_KEY` signs session cookies and reset tokens. Keep it private and never commit it.
+    - With Gmail, `MAIL_PASSWORD` must be an app password, not your normal password.
+    - For local testing without SMTP, set `MAIL_BACKEND = "console"` in the config to print emails to the terminal.
+    - `RESET_MAX_AGE` (in `routes/config.py`) is the reset link lifetime in seconds.
+  
+6. **Initialize the database**
     
     ```bash
     python init_db.py
@@ -55,43 +77,90 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     
     This creates `database.db` using the schema defined in `schema.sql`.
     
-5. **Run the app**
+7. **Run the app**
     
     ```bash
     python app.py
     ```
     
-6. **Open in browser** Visit `http://localhost:5000`
+8. **Open in browser** Visit `http://localhost:5000`
     
 
-## CRUD Operations (Flask Routes)
+## Routes
 
-| Operation  | Method | Route                  | Description                                          |
-| ---------- | ------ | ---------------------- | ---------------------------------------------------- |
-| **Create** | POST   | `/tasks`               | Inserts a new task from the Add Task form            |
-| **Read**   | GET    | `/`                    | Dashboard: today's tasks + calendar + upcoming tasks |
-| **Read**   | GET    | `/tasks`               | Full visible task list                               |
-| **Read**   | GET    | `/tasks/edit/<id>`     | Fetches one task, pre-fills the edit form            |
-| **Update** | POST   | `/tasks/update/<id>`   | Saves edited task fields                             |
-| **Update** | POST   | `/tasks/complete/<id>` | Toggles a task's completed status                    |
-| **Delete** | POST   | `/tasks/delete/<id>`   | Soft-deletes a task (`is_visible = 0`)               |
-| **Undo**   | POST   | `/tasks/restore/<id>`  | Undo — restores a soft-deleted task                  |
+### Public
+
+| Method | Route | Description |
+| ------ | ----- | ----------- |
+| GET | `/` | Landing page (redirects to `/dashboard` if logged in) |
+| GET, POST | `/register` | Create an account |
+| GET, POST | `/login` | Log in |
+| POST | `/logout` | Log out |
+| GET, POST | `/forgot-password` | Request a reset link |
+| GET, POST | `/reset-password/<token>` | Set a new password using a reset link |
+
+### Login required
+
+| Method | Route | Description |
+| ------ | ----- | ----------- |
+| GET | `/dashboard` | Today's tasks, calendar, upcoming tasks |
+| GET, POST | `/tasks` | List tasks / create a task |
+| GET | `/tasks/edit/<id>` | Pre-fill the edit form |
+| POST | `/tasks/update/<id>` | Save edits |
+| POST | `/tasks/complete/<id>` | Toggle completed |
+| POST | `/tasks/delete/<id>` | Soft delete (`is_visible = 0`) |
+| POST | `/tasks/restore/<id>` | Undo delete |
+| GET | `/profile` | View profile |
+| POST | `/profile/details` | Update display name and email |
+| POST | `/profile/password` | Change password |
 
 ## Features
 
-### Minimum Requirements
+### From Activity 1 (Tasks)
 
-- To-do list interface (Dashboard + Tasks page)
-- Add Task — title, description, due date, time, priority, tags, category
-- Edit Task — pre-filled form, updates existing record
-- Delete Task — confirmation dialog before deleting
-- Mark Task as Done — checkbox toggle with strikethrough styling
-- Data Persistence — SQLite database, survives app restarts
+- Dashboard with today's tasks, upcoming tasks and a calendar view
+- Add, edit, delete (soft delete) and complete tasks
+- Undo on delete via a toast notification
+- Data persistence in SQLite
 
-### Expanded Requirements (2 of 3 implemented)
+### Added in Activity 2 (Accounts)
 
-1. **Undo on Delete** — after deleting, a toast notification appears with an Undo button; clicking it restores the task.
-2. **Calendar View** — the Dashboard includes a calendar grid showing the current month, with a dot marking any day that has tasks due. Clicking a day filters the Upcoming panel to show that day's tasks instead.
+- **Registration and login/logout** with a public landing page
+- **Per-user data:** every task query is filtered by the logged-in user's id, so users only see and modify their own tasks
+- **Protected pages:** `/dashboard`, `/tasks` and `/profile` require login
+- **Profile page:**
+  - Update display name and email (email must be unique across accounts)
+  - Change password (requires the current password; the new one must differ from it and be confirmed)
+  - Success and error feedback through flash messages
+  - Unsaved-changes warning if you leave the page with edited fields
+- **Password recovery by email** (see below)
+
+## Session Handling
+
+- On successful login the app stores `user_id` and `display_name` in Flask's `session`. Flask keeps the session in a **signed cookie**, so the browser cannot tamper with it without invalidating the signature. This is why `SECRET_KEY` must be secret.
+- The `@login_required` decorator checks for `user_id` in the session on every protected route and redirects to the login page if it is missing.
+- Every task query and update includes `AND user_id = ?` with `session["user_id"]`, so one user cannot read or change another user's tasks by guessing ids.
+- Logging out clears the session.
+- An `after_request` hook (`no_cache_for_logged_in_pages`) adds no-cache headers to logged-in pages, so pressing the browser's back button after logging out does not show cached private content.
+- Passwords are never stored in plain text. They are hashed with Werkzeug's `generate_password_hash` and checked with `check_password_hash`.
+- If a logged-in user visits `/forgot-password`, they are redirected to their profile instead.
+
+## Password Recovery
+
+1. **Request:** the user enters their email at `/forgot-password`.
+2. **Same response either way:** the page shows the same confirmation whether or not the email exists, so it cannot be used to discover which emails are registered.
+3. **Token creation:** if the account exists, the app builds a signed token with `itsdangerous.URLSafeTimedSerializer`. The token contains:
+    - the user's id (`uid`)
+    - a **fingerprint** of the current password hash (`fp`, the first 16 hex characters of its SHA-256)
+
+    The serializer is signed with `SECRET_KEY` and uses its own salt (`"password-reset"`), so these tokens are useless for anything else signed with the same key. The token is also timestamped.
+4. **Email:** a link to `/reset-password/<token>` is sent through Flask-Mailman.
+5. **Validation:** when the link is opened, the app rejects the token if any of these is true:
+    - the signature is invalid or the token was altered
+    - it is older than `RESET_MAX_AGE`
+    - the stored fingerprint no longer matches the user's current password hash
+6. **Reset:** if the token is valid, the user enters and confirms a new password (minimum 8 characters). The app saves the new hash and redirects to login with a success message.
+7. **Single use:** no token table is needed. Changing the password changes the hash, so the fingerprint inside any previously issued link stops matching and the link becomes invalid. The same happens if the user changes their password from the profile page after requesting a reset.
 
 ## Screenshots
 
