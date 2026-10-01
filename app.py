@@ -14,7 +14,7 @@ from flask_mailman import Mail, EmailMessage
 app = Flask(__name__)
 
 load_dotenv()
-app.secret_key = os.environ["SECRET_KEY"] #crashes at startup if key is missing (intentional)
+app.secret_key = os.environ["SECRET_KEY"] 
 serializer = URLSafeTimedSerializer(app.secret_key, salt="password-reset")
 RESET_MAX_AGE = 15 * 60
 
@@ -28,7 +28,7 @@ app.config.update(
 mail = Mail(app)
 
 
-email_pattern = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+email_pattern = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 # -------------- template filters --------------
 @app.template_filter('format_date')
 def format_date(value):
