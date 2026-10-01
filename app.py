@@ -125,9 +125,11 @@ def load_reset_user(conn, token):
 
 def send_reset_email(to_email, link):
     body = (
-        "Someone asked to reset the password for your Agenda account.\n\n"
-        f"Use this link within 15 minutes:\n{link}\n\n"
-        "If this wasn't you, ignore this email."
+        "We received a request to reset your password. To continue managing your tasks smoothly click the link below to enter a new password. \n"
+        f"\n{link}\n\n"
+        "This link will expire in 15 minutes. \n\n"
+        "Sincerely, \n"
+        "Agenda"
     )
     try:
         EmailMessage(
