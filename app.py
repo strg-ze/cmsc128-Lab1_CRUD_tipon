@@ -229,7 +229,7 @@ def login():
                 session.clear()
                 session["user_id"] = user["id"]
                 session["display_name"] = user["display_name"]
-                return redirect(url_for("dashboard"))
+                return redirect(url_for("profile"))
 
     return render_template("login.html", errors=errors, email=email)
 
