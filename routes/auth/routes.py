@@ -54,14 +54,19 @@ def register():
                 if taken:
                     errors["email"] = "An account with this email already exists."
                 else:
-                    conn.execute(
-                        "INSERT INTO users (email, display_name, password_hash)"
+                    cursor = conn.execute(
+                        "INSERT INTO users (email, display_name, password_hash) "
                         "VALUES (?, ?, ?)",
                         (email, display_name, generate_password_hash(password)),
                     )
                     conn.commit()
-                    flash("Account created! You can now log in.", "success")
-                    return redirect(url_for("auth.login"))
+
+                    session.clear()
+                    session["user_id"] = cursor.lastrowid
+                    session["display_name"] = display_name
+
+                    flash(f"Welcome, {display_name}! Your account has been created.", "success")
+                    return redirect(url_for("dashboard"))
             finally:
                 conn.close()
 
@@ -99,7 +104,7 @@ def login():
                 session.clear() #start from a fresh session
                 session["user_id"] = user["id"] #logged in marker
                 session["display_name"] = user["display_name"]
-                return redirect(url_for("account.profile"))
+                return redirect(url_for("dashboard"))
 
     return render_template("login.html", errors=errors, email=email)
 
