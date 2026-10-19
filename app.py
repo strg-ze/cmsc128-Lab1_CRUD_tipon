@@ -120,9 +120,10 @@ def tasks():
             )
         )
         conn.commit()
+        conn.close()
+        return redirect(url_for('tasks'))
 
     all_tasks = get_visible_tasks(conn, '1=1',())
-    conn.close()
     return render_template("tasks.html", tasks = all_tasks)
 
 
