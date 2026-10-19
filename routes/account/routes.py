@@ -22,15 +22,31 @@ def render_profile(user, details_errors=None, password_errors=None, form=None):
         password_errors=password_errors or {}
     )
 
+#keep the errors in session for one page view then redirect to the profile page
+def redirect_with_errors(details_errors=None, password_errors=None, form=None):
+    session["profile_feedback"]={
+        "details_errors": details_errors or {},
+        "password_errors": password_errors or {},
+        "form": form,
+    }
+    return redirect(url_for("account.profile"))
+
 #------------routes-----------------------
-@bp.route("/profile", methods=['GET'])
+@bp.route("/profile")
 @login_required
 def profile():
     conn = get_db_connection()
     user = get_current_user(conn)
     conn.close()
-    return render_profile(user)
-    
+
+    #pop = read the stored errors once and delete so a refresh clears them
+    feedback = session.pop("profile_feedback", {})
+    return render_profile(
+        user,
+        details_errors=feedback.get("details_errors"),
+        password_errors=feedback.get("password_errors"),
+        form=feedback.get("form")
+    )
 
 @bp.route("/profile/details", methods=["POST"])
 @login_required
@@ -55,20 +71,17 @@ def profile_details():
             if other:
                 errors["email"] = "Another account already uses this email."
 
-        if not errors:
-                conn.execute(
-                    "UPDATE users SET email = ?, display_name = ? WHERE id = ?",
-                    (email, display_name, user["id"]),
-                )
-                conn.commit()
-                session["display_name"] = display_name 
-                flash("Profile updated.", "success")
-                return redirect(url_for("account.profile"))
-        return render_profile(
-                user,
-                details_errors=errors,
-                form={"display_name": display_name, "email": email},
-            )
+        if errors:
+            return redirect_with_errors(details_errors=errors, form={"display_name": display_name, "email": email},)
+
+        conn.execute(
+            "UPDATE users SET email = ?, display_name = ? WHERE id = ?",
+            (email, display_name, user["id"]),
+        )
+        conn.commit()
+        session["display_name"] = display_name
+        flash("Profile updated.", "success")
+        return redirect(url_for("account.profile"))
     finally:
         conn.close()
 
@@ -95,15 +108,14 @@ def profile_password():
         elif new != confirm:
             errors["confirm"] = "Passwords do not match."
 
-        if not errors:
-            conn.execute(
-                "UPDATE users SET password_hash = ? WHERE id = ?",
-                (generate_password_hash(new), user["id"]),  
-            )
-            conn.commit()
-            flash("Password changed.", "success")
-            return redirect(url_for("account.profile"))
-
-        return render_profile(user, password_errors=errors)
+        if errors:
+            return redirect_with_errors(password_errors=errors)
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (generate_password_hash(new), user["id"]),
+        )
+        conn.commit()
+        flash("Password updated.", "success")
+        return redirect(url_for("account.profile"))
     finally:
         conn.close()
