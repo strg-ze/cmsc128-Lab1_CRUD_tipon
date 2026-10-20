@@ -141,7 +141,80 @@
             <button class="add-task-btn" type="submit">{{'Update Task' if edit_task else 'Add Task'}}</button>
         </form>
     </section>
-
 </div>
 
+<!--note: heading is new page in individual and new list in group-->
+<dialog id="create-modal" class="modal">
+    <form method="post" action="#">
+        <h2>New page</h2>
+        <label for="new-name">Name</label>
+        <input id="new-name" name="name" required>
+        <div class="modal-actions">
+            <button type="button" class="task-edit-btn" data-close>Cancel</button>
+            <button type="submit" class="add-task-btn">Create</button>
+        </div>
+    </form>
+</dialog>
+
+<!--individual modal-->
+<dialog id="page-settings-modal" class="modal">
+    <form method="post" action="#">
+        <h2>Page settings</h2>
+        <label for="page-name">Name</label>
+        <input id="page-name" name="name" value="School" required>
+        <div class="modal-actions">
+            <button type="button" class="task-edit-btn" data-close>Cancel</button>
+            <button type="submit" class="add-task-btn">Save</button>
+        </div>
+    </form>
+    <hr>
+    <form method="post" action="#" onsubmit="return confirm('Delete this page? Its tasks become uncategorized.');">
+        <button type="submit" class="task-delete">Delete page</button>
+    </form>
+</dialog>
+
+<!-- group settings -->
+<dialog id="group-settings-modal" class="modal">
+    <form method="post" action="#">
+        <h2>List settings</h2>
+        <label for="list-name">Name</label>
+        <input id="list-name" name="name" value="CMSC 128 Project" required>
+        <div class="modal-actions">
+            <button type="button" class="task-edit-btn" data-close>Cancel</button>
+            <button type="submit" class="add-task-btn">Save</button>
+        </div>
+    </form>
+    <hr>
+    <h3>Members</h3>
+    <ul class="member-list">
+        <li><span>Nica <small>(owner)</small></span></li>
+        <li>
+            <span>Nicole</span>
+            <form method="post" action="#"><button type="submit" class="task-delete">Remove</button></form>
+        </li>
+    </ul>
+    <form method="post" action="#">
+        <label for="member-email">Add member by email</label>
+        <input id="member-email" name="email" type="email" required>
+        <div class="modal-actions">
+            <button type="submit" class="add-task-btn">Add</button>
+        </div>
+    </form>
+    <hr>
+    <!-- delete list; owner deletes, members leave -->
+    <form method="post" action="#" onsubmit="return confirm('Delete this list and all its tasks?');">
+        <button type="submit" class="task-delete">Delete list</button>
+    </form>
+</dialog>
+
+<script>
+    document.querySelectorAll("[data-open]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            document.getElementById(btn.dataset.open).showModal();
+        });
+    });
+    document.querySelectorAll("[data-close]").forEach(function (btn) {
+        btn.addEventListener("click", function () { btn.closest("dialog").close(); });
+    });
+</script>
 {%endblock%}
