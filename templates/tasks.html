@@ -2,6 +2,10 @@
 {% block title%} Tasks {%endblock%}
 {% block content %}
 <h1 class="page-title">Tasks</h1>
+<nav class="mode-toggle" aria-label="List type">
+    <a href="#" class="mode-btn is-active" aria-current="page">Personal</a>
+    <a href="#" class="mode-btn">Group</a>
+</nav>
 {% if request.args.get('deleted') %}
 <div id="undo-notif" class="undo-notif">
     Task deleted.
@@ -22,8 +26,19 @@
 <div class="tasks-layout">
     <section class="task-list-panel">
         <div class="panel-header">
-            <span class="filter-badge">All Tasks</span>
-            <!--<a href="#">See other pages</a>-->
+            <form method="get" class="list-picker">
+                <input type="hidden" name="mode" value="individual"
+                <label for="list-select" class="visually-hidden">Choose a page</label>
+                <select id="list-select" name="page" onchange="this.form.submit()">
+                    <option value="">All Tasks</option>
+                    <option>School</option>
+                    <option>Personal</option>
+                    <option>Work</option>
+                </select>
+            </form>
+
+            <!--placeholder for new page button-->
+            <button type="button" class="task-edit-btn" data-open="create-modal">+ New page</button>
         </div>
         <h5 class="list-label"></h5>
         <ul class="task-list">
@@ -36,6 +51,7 @@
                     <span class="task-name">{{ task['name']}}</span>
                     <span class="task-desc">{{ task['description']}}</span>
                     <span class="task-category">{{ task['category']}}</span>
+                    <span class="task-meta"> Added by me | CMSC 128 Project</span> <!--for group mode, placeholder-->
 
                 </div>
                 <time class="task-time">{{task['due_date']|format_date}} {{task['time']}}</time>
@@ -98,12 +114,26 @@
                     <label for="tags">Tags</label>
                     <input type="text" id="tags" name="tags" placeholder="#tags" value="{{ edit_task['tags'] if edit_task else ''}}">
                 </div>
-                <div>
-                    <label for="category">Category</label>
-                    <select id="category" name="category">
-                        <option value="school" {% if edit_task and edit_task['category'] == 'school' %} selected {%endif%}>School</option>
-                        <option value="personal" {% if edit_task and edit_task['category'] == 'personal' %} selected {%endif%}>Personal</option>
-                        <option value="work" {% if edit_task and edit_task['category'] == 'work' %} selected {%endif%}>Work</option>
+                <div class="individual-only">
+                    <div>
+                        <label for="category">Category</label>
+                        <select id="category" name="category">
+                            <option value="school" {% if edit_task and edit_task['category'] == 'school' %} selected {%endif%}>School</option>
+                            <option value="personal" {% if edit_task and edit_task['category'] == 'personal' %} selected {%endif%}>Personal</option>
+                            <option value="work" {% if edit_task and edit_task['category'] == 'work' %} selected {%endif%}>Work</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="form-row">
+                <div class="group-only">
+                    <label for="list-id">List</label>
+                    <select id="list-id" name="list-id">
+                        <option value="1">Group List 1</option>
+                        <option value="2">Group List 2</option>
                     </select>
                 </div>
             </div>
