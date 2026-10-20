@@ -105,9 +105,27 @@ def tasks():
     conn = get_db_connection()
 
     if request.method == 'POST':
+        category_name = request.form['category']
         conn.execute(
-            'INSERT INTO tasks (user_id, name, description, priority, due_date, time, tags, category)'
-             'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT OR IGNORE INTO categories(user_id, name) VALUES (?, ?)',
+            (session["user_id"], category_name)
+        )    
+        category = conn.execute(
+            'SELECT id FROM categories WHERE user_id = ? AND name = ?',
+            (session["user_id"], category_name)
+        ).fetchone()      
+
+        category_id = category['id']
+
+        personal_list = conn.execute(
+            'SELECT id FROM lists WHERE owner_id = ? AND is_personal = 1',
+            (session["user_id"],)
+        ).fetchone()
+
+        list_id = personal_list['id']
+        conn.execute(
+            'INSERT INTO tasks (user_id, name, description, priority, due_date, time, tags, category_id, list_id)'
+             'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
                 session["user_id"],
                 request.form['task-name'],
@@ -116,7 +134,8 @@ def tasks():
                 request.form['due-date'],
                 request.form['time'],
                 request.form['tags'],
-                request.form['category']            
+                category_id,
+                list_id
             )
         )
         conn.commit()
