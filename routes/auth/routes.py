@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from werkzeug.security import generate_password_hash, check_password_hash
 from init_db import get_db_connection
 from .validators import check_email, check_password
+from routes.lists.service import create_default_workplace
 
 bp = Blueprint("auth", __name__)   # endpoints -> auth.login, auth.register
 
@@ -54,19 +55,19 @@ def register():
                 if taken:
                     errors["email"] = "An account with this email already exists."
                 else:
-                    cursor = conn.execute(
-                        "INSERT INTO users (email, display_name, password_hash) "
-                        "VALUES (?, ?, ?)",
-                        (email, display_name, generate_password_hash(password)),
-                    )
-                    conn.commit()
+                   cursor = conn.execute(
+                       "INSERT INTO users (display_name, email, password_hash) VALUES (?, ?, ?)",
+                       (display_name, email, generate_password_hash(password)),
+                   )
+                   new_user_id = cursor.lastrowid
+                   create_default_workplace(conn, new_user_id)
+                   conn.commit() 
 
-                    session.clear()
-                    session["user_id"] = cursor.lastrowid
-                    session["display_name"] = display_name
-
-                    flash(f"Welcome, {display_name}! Your account has been created.", "success")
-                    return redirect(url_for("dashboard"))
+                   session.clear() #start a fresh session
+                   session["user_id"] = new_user_id
+                   session["display_name"] = display_name
+                   flash(f"Welcome, {display_name}! Your account has been created.", "success")
+                   return redirect(url_for("dashboard"))
             finally:
                 conn.close()
 
