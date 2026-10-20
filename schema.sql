@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS list_members (
     PRIMARY KEY (list_id, user_id)
 );
 
-create table if not exists categories (
+CREATE TABLE if NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL COLLATE NOCASE,
@@ -34,8 +34,8 @@ create table if not exists categories (
 
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    list_id INTEGER REFERENCES lists(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     description TEXT,
@@ -43,9 +43,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     due_date TEXT,
     time TEXT,
     tags TEXT,
-    category TEXT,
     completed INTEGER DEFAULT 0,
     is_visible INTEGER DEFAULT 1
 );
 
-CREATE INDEX IF NOT EXISTS idx_tasks_list_id ON tasks(list_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(list_id);
