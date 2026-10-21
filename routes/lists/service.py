@@ -87,7 +87,7 @@ def get_group_list_or_404(conn, list_id, user_id, owner_only=False):
 def get_members(conn, list_id):
     return conn.execute(
         """SELECT u.id, u.display_name AS name,
-            CASE WHEN u.id = l.owner_id THEN 'owner ELSE 'member END AS role
+            CASE WHEN u.id = l.owner_id THEN 'owner' ELSE 'member' END AS role
             FROM list_members m
             JOIN users u ON u.id = m.user_id
             JOIN lists l ON l.id = m.list_id
@@ -99,7 +99,7 @@ def get_members(conn, list_id):
 #tasks
 def get_task_for_user (conn, task_id, user_id):
     return conn.execute(
-        """SELECT T.*, l.is_personal
+        """SELECT t.*, l.is_personal
            FROM tasks t
            JOIN lists l ON l.id = t.list_id
            JOIN list_members m ON m.list_id = l.id
@@ -128,8 +128,8 @@ def get_tasks_for_view(conn, user_id, mode, selected):
                     WHERE t.is_visible = 1"""
         params = [user_id]
         if selected:
-            query += "AND t.category_id = ?"
+            query += " AND t.category_id = ?"
             params.append(int(selected))
 
-    sql += "ORDER BY t.due_date, t.time"
+    query += " ORDER BY t.due_date, t.time"
     return conn.execute(query, params).fetchall()
