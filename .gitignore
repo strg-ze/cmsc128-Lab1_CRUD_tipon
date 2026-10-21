@@ -219,3 +219,7 @@ __marimo__/
 .env
 .env
 *.db
+
+.pytest_cache/
+tests/
+pytest.ini
