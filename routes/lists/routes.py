@@ -1,9 +1,9 @@
 from flask import Blueprint, request, redirect, url_for, session, flash
 
 from init_db import get_db_connection
-from auth.decorators import login_required
-from auth.validators import check_email
-from lists.service import (
+from routes.auth.decorators import login_required
+from routes.auth.validators import check_email
+from routes.lists.service import (
     clean_name, get_own_category_or_404, get_group_list_or_404,
 )
 
