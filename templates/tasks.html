@@ -3,13 +3,17 @@
 {% block content %}
 <h1 class="page-title">Tasks</h1>
 <nav class="mode-toggle" aria-label="List type">
-    <a href="#" class="mode-btn is-active" aria-current="page">Personal</a>
-    <a href="#" class="mode-btn">Group</a>
+    <a href="{{ url_for('tasks', mode='individual') }}"
+       class="mode-btn {{ 'is-active' if mode == 'individual' }}"
+       {% if mode == 'individual' %}aria-current="page"{% endif %}>Individual</a>
+    <a href="{{ url_for('tasks', mode='group') }}"
+       class="mode-btn {{ 'is-active' if mode == 'group' }}"
+       {% if mode == 'group' %}aria-current="page"{% endif %}>Group</a>
 </nav>
 {% if request.args.get('deleted') %}
 <div id="undo-notif" class="undo-notif">
     Task deleted.
-    <form action = "{{ url_for('undo_task', task_id=request.args.get('deleted'))}}" method="POST" style="display: inline;">
+    <form action = "{{ url_for('undo_task', task_id=request.args.get('deleted'),**view) }}" method="POST" style="display: inline;">
         <button type="submit" class="undo-btn">Undo</button>
     </form>
 </div>
@@ -28,17 +32,27 @@
         <div class="panel-header">
             <form method="get" class="list-picker">
                 <input type="hidden" name="mode" value="individual"
-                <label for="list-select" class="visually-hidden">Choose a page</label>
-                <select id="list-select" name="page" onchange="this.form.submit()">
+                <label for="list-select" class="visually-hidden">
+                    {{ 'All Lists' if mode == 'group' else 'All Pages' }}
+                </label>
+                <select id="list-select" name="{{ param }}" onchange="this.form.submit()">
                     <option value="">All Tasks</option>
-                    <option>School</option>
-                    <option>Personal</option>
-                    <option>Work</option>
+                    {% for opt in options %}
+                        <option value="{{ opt.value }}" {% if opt.value == selected %}selected{% endif %}>{{ opt.label }}</option>
+                    {% endfor %}
                 </select>
             </form>
 
-            <!--placeholder for new page button-->
-            <button type="button" class="task-edit-btn" data-open="create-modal">+ New page</button>
+            {% if not selected %}
+                <button type="button" class="task-edit-btn" data-open="create-modal">
+                    + New {{ 'list' if mode == 'group' else 'page' }}
+                </button>
+            {% else %}
+                <button type="button" class="task-edit-btn"
+                        data-open="{{ 'group-settings-modal' if mode == 'group' else 'page-settings-modal' }}">
+                    Settings
+                </button>
+            {% endif %}
         </div>
         <h5 class="list-label"></h5>
         <ul class="task-list">
@@ -50,19 +64,33 @@
                 <div class="task-info">
                     <span class="task-name">{{ task['name']}}</span>
                     <span class="task-desc">{{ task['description']}}</span>
-                    <span class="task-category">{{ task['category']}}</span>
-                    <span class="task-meta"> Added by me | CMSC 128 Project</span> <!--for group mode, placeholder-->
+                    {% if mode == 'individual' %}
+                        <span class="task-category">{{ task['category']}}</span>
+                    {% else %}
+                    <span class="task-meta"> 
+                        Added by {{ task['added_by'] or 'a former member' }}{% if not selected %} · {{ task['list_name'] }}{% endif %}
+                    </span> <!--for group mode-->
 
                 </div>
                 <time class="task-time">{{task['due_date']|format_date}} {{task['time']}}</time>
                 
-                <a href="{{url_for('edit_task', task_id=task['id'])}}" class="task-edit-btn">Edit</a>
-                <form action="{{ url_for('delete_task', task_id=task['id']) }}" method="POST" class="delete-form" onsubmit="return confirm('Delete this task?');">
+                <a href="{{url_for('edit_task', task_id=task['id'], **view)}}" class="task-edit-btn">Edit</a>
+                <form action="{{ url_for('delete_task', task_id=task['id'], **view) }}" method="POST" class="delete-form" onsubmit="return confirm('Delete this task?');">
                     <button type="submit" class="task-delete">Delete</button>
                 </form>
                     
             </li>
             {% endfor %}
+
+            {% if not tasks %}
+            <li class="empty-state">
+                {% if mode == 'group' and not options %}
+                    You're not in any group lists yet. Use "+ New list" to create one.
+                {% else %}
+                    No tasks here yet.
+                {% endif %}
+            </li>
+            {% endif %}
         </ul>
     </section>
 
@@ -72,11 +100,23 @@
         </div>
 
         <form action=
-            "{% if edit_task%}
-                {{url_for('update_task', task_id=edit_task['id'])}} 
-            {%else%}
-                {{url_for('tasks')}}
-            {%endif%}" method="POST">
+            "{{ url_for('update_task', task_id=edit_task['id'], **view) if edit_task else url_for('tasks', **view) }}" method="POST">
+
+            {% if mode == 'group' and not edit_task %}
+                {% if selected %}
+                    <p class="adding-to">Adding to: <strong>{{ current_name }}</strong></p>
+                    <input type="hidden" name="list_id" value="{{ selected }}">
+                {% else %}
+                    <div>
+                        <label for="list-id">List</label>
+                        <select id="list-id" name="list_id" required>
+                            {% for opt in options %}
+                                <option value="{{ opt.value }}">{{ opt.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+            {% endif %}
 
             <label for="task-name">Name</label>
             <input type="text" id="task-name" name="task-name" placeholder="Task #1" required value="{{ edit_task['name'] if edit_task else ''}}">
@@ -115,40 +155,34 @@
                     <input type="text" id="tags" name="tags" placeholder="#tags" value="{{ edit_task['tags'] if edit_task else ''}}">
                 </div>
                 <div class="individual-only">
+                    {% if mode == 'individual' %}
                     <div>
                         <label for="category">Category</label>
-                        <select id="category" name="category">
-                            <option value="school" {% if edit_task and edit_task['category'] == 'school' %} selected {%endif%}>School</option>
-                            <option value="personal" {% if edit_task and edit_task['category'] == 'personal' %} selected {%endif%}>Personal</option>
-                            <option value="work" {% if edit_task and edit_task['category'] == 'work' %} selected {%endif%}>Work</option>
+                        <select id="category" name="category_id">
+                        <option value="">None</option>
+                        {% for c in categories %}
+                            <option value="{{ c.id }}" {% if edit_task and edit_task['category_id'] == c.id %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
                         </select>
                     </div>
-
+                    {% endif %}
                 </div>
 
             </div>
-
-            <div class="form-row">
-                <div class="group-only">
-                    <label for="list-id">List</label>
-                    <select id="list-id" name="list-id">
-                        <option value="1">Group List 1</option>
-                        <option value="2">Group List 2</option>
-                    </select>
-                </div>
-            </div>
-
-            <button class="add-task-btn" type="submit">{{'Update Task' if edit_task else 'Add Task'}}</button>
+            <button class="add-task-btn" type="submit">{{ 'Update Task' if edit_task else 'Add Task' }}</button>
+            {% if edit_task %}
+                <a href="{{ url_for('tasks', **view) }}" class="task-edit-btn">Cancel</a>
+            {% endif %}
         </form>
     </section>
 </div>
 
 <!--note: heading is new page in individual and new list in group-->
 <dialog id="create-modal" class="modal">
-    <form method="post" action="#">
-        <h2>New page</h2>
+    <form method="post" action="{{ url_for('lists.create_list') if mode == 'group' else url_for('lists.create_page') }}">
+        <h2>New {{ 'list' if mode == 'group' else 'page' }}</h2>
         <label for="new-name">Name</label>
-        <input id="new-name" name="name" required>
+        <input id="new-name" name="name" maxlength="40" required>
         <div class="modal-actions">
             <button type="button" class="task-edit-btn" data-close>Cancel</button>
             <button type="submit" class="add-task-btn">Create</button>
@@ -156,44 +190,59 @@
     </form>
 </dialog>
 
-<!--individual modal-->
+{% if mode == 'individual' and selected %}
 <dialog id="page-settings-modal" class="modal">
-    <form method="post" action="#">
+    <form method="post" action="{{ url_for('lists.rename_page', category_id=selected) }}">
         <h2>Page settings</h2>
         <label for="page-name">Name</label>
-        <input id="page-name" name="name" value="School" required>
+        <input id="page-name" name="name" value="{{ current_name }}" required>
         <div class="modal-actions">
             <button type="button" class="task-edit-btn" data-close>Cancel</button>
             <button type="submit" class="add-task-btn">Save</button>
         </div>
     </form>
     <hr>
-    <form method="post" action="#" onsubmit="return confirm('Delete this page? Its tasks become uncategorized.');">
+    <form method="post" action="{{ url_for('lists.delete_page', category_id=selected) }}" onsubmit="return confirm('Delete this page? Its tasks become uncategorized.');">
         <button type="submit" class="task-delete">Delete page</button>
     </form>
 </dialog>
+{% endif %}
 
-<!-- group settings -->
+{% if mode == 'group' and selected %}
 <dialog id="group-settings-modal" class="modal">
-    <form method="post" action="#">
-        <h2>List settings</h2>
+
+    <h2>List settings</h2>
+    {% if is_owner %}
+    <form method="post" action="{{ url_for('lists.rename_list', list_id=selected) }}">
+
         <label for="list-name">Name</label>
-        <input id="list-name" name="name" value="CMSC 128 Project" required>
+        <input id="list-name" name="name" value="{{ current_name }}" required>
         <div class="modal-actions">
             <button type="button" class="task-edit-btn" data-close>Cancel</button>
             <button type="submit" class="add-task-btn">Save</button>
         </div>
     </form>
+    {% else %}
+        <p class="list-name-static">{{ current_name }}</p>
+    {% endif %}
     <hr>
+
     <h3>Members</h3>
     <ul class="member-list">
-        <li><span>Nica <small>(owner)</small></span></li>
+        {% for m in members %}
         <li>
-            <span>Nicole</span>
-            <form method="post" action="#"><button type="submit" class="task-delete">Remove</button></form>
+            <span>{{ m.name }}{% if m.role == 'owner' %} <small>(owner)</small>{% endif %}</span>
+            {% if is_owner and m.role != 'owner' %}
+                <form method="post" action="{{ url_for('lists.remove_member', list_id=selected, member_id=m.id) }}">
+                    <button type="submit" class="task-delete">Remove</button>
+                </form>
+            {% endif %}
         </li>
+        {% endfor %}
     </ul>
-    <form method="post" action="#">
+
+    {% if is_owner %}
+    <form method="post" action="{{ url_for('lists.add_member', list_id=selected) }}">
         <label for="member-email">Add member by email</label>
         <input id="member-email" name="email" type="email" required>
         <div class="modal-actions">
@@ -202,10 +251,21 @@
     </form>
     <hr>
     <!-- delete list; owner deletes, members leave -->
-    <form method="post" action="#" onsubmit="return confirm('Delete this list and all its tasks?');">
+    <form method="post" action="{{ url_for('lists.delete_list', list_id=selected) }}" onsubmit="return confirm('Delete this list and all its tasks?');">
         <button type="submit" class="task-delete">Delete list</button>
     </form>
+    {% else %}
+    <hr>
+    <form method="post" action="{{ url_for('lists.leave_list', list_id=selected) }}"
+          onsubmit="return confirm('Leave this list?');">
+        <button type="submit" class="task-delete">Leave list</button>
+    </form>
+    <div class="modal-actions">
+        <button type="button" class="task-edit-btn" data-close>Close</button>
+    </div>
+    {% endif %}
 </dialog>
+{% endif %}
 
 <script>
     document.querySelectorAll("[data-open]").forEach(function (btn) {
