@@ -198,10 +198,16 @@ def tasks():
 
         return render_template(
             "tasks.html",
-            mode=mode, param=param, selected=selected, view=view,
-            options=options, current_name=current["label"] if current else "",
+            mode=mode, 
+            param=param, 
+            selected=selected, 
+            view=view,
+            options=options, 
+            current_name=current["label"] if current else "",
             tasks=get_tasks_for_view(conn, user_id, mode, selected),
-            categories=categories, members=members, is_owner=is_owner,
+            categories=categories, 
+            members=members, 
+            is_owner=is_owner,
             edit_task=edit_task,
         )
     finally:
@@ -222,17 +228,6 @@ def delete_task(task_id):
     finally:
         conn.close()
     return redirect(url_for("tasks", deleted=task_id, **view_args(mode, param, selected)))
-
-
-
-@app.route("/tasks/edit/<int:task_id>")
-@login_required
-def edit_task(task_id):
-    conn = get_db_connection()
-    task = conn.execute('SELECT * FROM tasks WHERE id = ? AND user_id = ?', (task_id, session["user_id"])).fetchone()
-    all_tasks = get_visible_tasks(conn, '1=1', ())
-    conn.close()
-    return render_template("tasks.html", tasks=all_tasks, edit_task= task)
 
 
 @app.route("/tasks/update/<int:task_id>", methods=['POST'])
