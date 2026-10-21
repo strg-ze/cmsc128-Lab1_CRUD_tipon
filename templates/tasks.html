@@ -2,6 +2,17 @@
 {% block title%} Tasks {%endblock%}
 {% block content %}
 <h1 class="page-title">Tasks</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <nav class="mode-toggle" aria-label="List type">
     <a href="{{ url_for('tasks', mode='individual') }}"
        class="mode-btn {{ 'is-active' if mode == 'individual' }}"
@@ -33,7 +44,7 @@
             <form method="get" class="list-picker">
                 <input type="hidden" name="mode" value="{{mode}}"
                 <label for="list-select" class="visually-hidden">
-                    {{ 'All Lists' if mode == 'group' else 'All Pages' }}
+                   <!-- {{ 'My Lists' if mode == 'group' else 'My Pages' }} -->
                 </label>
                 <select id="list-select" name="{{ param }}" onchange="this.form.submit()">
                     <option value="">All Tasks</option>
