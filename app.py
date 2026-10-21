@@ -1,7 +1,7 @@
 import calendar
 from datetime import date, datetime
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 
 from init_db import get_db_connection
 
@@ -10,11 +10,18 @@ from routes.auth.decorators import login_required, no_cache_for_logged_in_pages
 from routes.auth.routes import bp as auth_bp
 from routes.auth.recovery import bp as recovery_bp
 from routes.account.routes import bp as account_bp
+from routes.lists.routes import bp as lists_bp
+from routes.lists.service import (
+    get_personal_list_id, get_categories, get_own_category_or_404, parse_category_id, get_group_lists, get_group_list_or_404, get_members,
+    get_task_for_user, get_tasks_for_view
+)
+
+
 
 app = Flask(__name__)
 app.config.from_object("routes.config") #loads config variables
 mail.init_app(app)
-
+app.register_blueprint(lists_bp)
 #-------act 2 auth features-------------
 app.after_request(no_cache_for_logged_in_pages)
 app.register_blueprint(auth_bp)
@@ -34,7 +41,11 @@ def format_date(value):
 def get_task_days_in_month(conn, year, month):
     month_prefix = f"{year}-{month:02d}-%"
     rows = conn.execute(
-        'SELECT DISTINCT due_date FROM tasks WHERE due_date LIKE ? AND is_visible = 1 AND user_id=?' , (month_prefix, session["user_id"])
+        """SELECT DISTINCT t.due_Date
+            FROM tasks t
+            JOIN list_members m ON m.list_id = t.list_id AND m.user_id = ?
+            WHERE t.due_date LIKE ? AND t.is_visible = 1""",
+            (session["user_id"], month_prefix),
     ).fetchall()
 
     task_days = set()
@@ -60,8 +71,14 @@ def build_month_calendar(year, month, task_days):
     return weeks
 
 def get_visible_tasks(conn, where_clause, params):
-    query = f'SELECT * FROM tasks WHERE is_visible = 1 AND user_id = ? AND {where_clause}'
-    return conn.execute(query, (session["user_id"],)+params).fetchall()
+        query = f"""SELECT t.*, c.name AS category,
+                       CASE WHEN l.is_personal = 0 THEN l.name END AS list_name
+                FROM tasks t
+                JOIN lists l ON l.id = t.list_id
+                JOIN list_members m ON m.list_id = l.id AND m.user_id = ?
+                LEFT JOIN categories c ON c.id = t.category_id
+                WHERE t.is_visible = 1 AND {where_clause}"""
+        return conn.execute(query, (session["user_id"],) + params).fetchall()
 
 ## -------------- routes --------------
 @app.route("/dashboard")
