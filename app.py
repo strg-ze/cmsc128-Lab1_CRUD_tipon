@@ -195,6 +195,8 @@ def tasks():
             edit_task = get_task_for_user(conn, int(edit_id), user_id)
             if edit_task is None:
                 abort(404)
+            if bool(edit_task["is_personal"]) != (mode == "individual"):
+                abort(404)      # the task doesn't belong to the mode being viewed
 
         return render_template(
             "tasks.html",
