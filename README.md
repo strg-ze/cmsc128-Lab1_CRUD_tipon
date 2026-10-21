@@ -1,6 +1,10 @@
 # Agenda — CMSC128 Lab Activity 1 (CRUD)
 
-**Agenda** is a simple, functional to-do list web app built with Flask and SQLite, featuring a Dashboard view, a Tasks management page, task editing/deletion with undo, and a built-in calendar view. Activity 2 (this branch, `act2-accounts`) adds user accounts: registration, login/logout, per-user task data, profile management and email-based password recovery.
+**Agenda** is a multi-account to-do list web app built for CMSC 128. Each user has a personal to-do list organized into pages (categories), and can create collaborative group lists and add other users to them.
+
+- **Activity 1:** To-do list with create, read, update and delete.
+- **Activity 2:** Registration, login, logout, sessions, profile page and password recovery.
+- **Activity 3:** User-based access control (UBAC) plus collaborative lists.
 
 ## Tech Stack
 
@@ -33,7 +37,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     ```bash
     git clone https://github.com/strg-ze/cmsc128-Lab1_CRUD_tipon.git
     cd <your-repo-folder>
-    git checkout act2-accounts
+    git checkout act3-ubac
     ```
     
 2. **Set up a virtual environment (recommended)**
@@ -69,7 +73,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     - For local testing without SMTP, set `MAIL_BACKEND = "console"` in the config to print emails to the terminal.
     - `RESET_MAX_AGE` (in `routes/config.py`) is the reset link lifetime in seconds.
   
-6. **Initialize the database**
+5. **Initialize the database**
     
     ```bash
     python init_db.py
@@ -77,13 +81,13 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     
     This creates `database.db` using the schema defined in `schema.sql`.
     
-7. **Run the app**
+6. **Run the app**
     
     ```bash
     python app.py
     ```
     
-8. **Open in browser** Visit `http://localhost:5000`
+7. **Open in browser** Visit `http://localhost:5000`
     
 
 ## Routes
@@ -101,18 +105,25 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
 
 ### Login required
 
-| Method | Route | Description |
-| ------ | ----- | ----------- |
-| GET | `/dashboard` | Today's tasks, calendar, upcoming tasks |
-| GET, POST | `/tasks` | List tasks / create a task |
-| GET | `/tasks/edit/<id>` | Pre-fill the edit form |
-| POST | `/tasks/update/<id>` | Save edits |
-| POST | `/tasks/complete/<id>` | Toggle completed |
-| POST | `/tasks/delete/<id>` | Soft delete (`is_visible = 0`) |
-| POST | `/tasks/restore/<id>` | Undo delete |
-| GET | `/profile` | View profile |
-| POST | `/profile/details` | Update display name and email |
-| POST | `/profile/password` | Change password |
+| Method and path | Purpose | Ownership check |
+|---|---|---|
+| `POST /logout` | End the session | login required |
+| `GET /dashboard` | Today, upcoming, calendar | joins `list_members` on the session user |
+| `GET /profile` | Profile page | login required |
+| `POST /profile/details` | Change display name and email | acts on the session user only; email must be unique |
+| `POST /profile/password` | Change password | current password re-verified |
+| `GET /tasks?mode=&page=&list=&edit=` | Task page, filtered by mode, page, list or task being edited | selected page/list must belong to the user, otherwise 404 |
+| `POST /tasks` | Add a task | target list must have the user as a member (404); category must belong to the user (404) |
+| `POST /tasks/update/<id>` | Edit a task | `get_task_for_user` (404) |
+| `POST /tasks/complete/<id>` | Toggle completed | `get_task_for_user` (404) |
+| `POST /tasks/delete/<id>` | Soft delete (`is_visible = 0`) | `get_task_for_user` (404) |
+| `POST /tasks/restore/<id>` | Undo delete | `get_task_for_user` (404) |
+| `POST /pages/new` | Create a page (category) | acts on the session user |
+| `POST /pages/<id>/rename`, `/pages/<id>/delete` | Rename or delete a page | page must belong to the user (404) |
+| `POST /lists/new` | Create a group list | creator becomes owner and first member |
+| `POST /lists/<id>/rename`, `/delete` | Rename or delete a list | owner only (404 non-member, 403 member) |
+| `POST /lists/<id>/members/add`, `/members/<user_id>/remove` | Manage members | owner only; the owner cannot be removed |
+| `POST /lists/<id>/leave` | Leave a list | member; the owner cannot leave |
 
 ## Features
 
@@ -135,7 +146,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
   - Unsaved-changes warning if you leave the page with edited fields
 - **Password recovery by email** (see below)
 
-## Session Handling
+#### Session Handling
 
 - On successful login the app stores `user_id` and `display_name` in Flask's `session`. Flask keeps the session in a **signed cookie**, so the browser cannot tamper with it without invalidating the signature. This is why `SECRET_KEY` must be secret.
 - The `@login_required` decorator checks for `user_id` in the session on every protected route and redirects to the login page if it is missing.
@@ -145,7 +156,7 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
 - Passwords are never stored in plain text. They are hashed with Werkzeug's `generate_password_hash` and checked with `check_password_hash`.
 - If a logged-in user visits `/forgot-password`, they are redirected to their profile instead.
 
-## Password Recovery
+#### Password Recovery
 
 1. **Request:** the user enters their email at `/forgot-password`.
 2. **Same response either way:** the page shows the same confirmation whether or not the email exists, so it cannot be used to discover which emails are registered.
@@ -161,6 +172,52 @@ Jinja2 is the templating engine Flask uses to embed Python-driven logic directly
     - the stored fingerprint no longer matches the user's current password hash
 6. **Reset:** if the token is valid, the user enters and confirms a new password (minimum 8 characters). The app saves the new hash and redirects to login with a success message.
 7. **Single use:** no token table is needed. Changing the password changes the hash, so the fingerprint inside any previously issued link stops matching and the link becomes invalid. The same happens if the user changes their password from the profile page after requesting a reset.
+
+### Activity 3- Access Control (UBAC)
+- **Personal tasks:** add, edit, complete, delete (with undo via a toast), organized into pages (categories) you can create, rename and delete.
+- **Group lists:** create a list, add members by email, and work on shared tasks. Owners can rename the list, add and remove members, and delete the list. Other members can leave.
+- **Access control:** a user can only read or change tasks in lists they belong to. Anything else returns 404 (not found) or 403 (forbidden).
+
+### How Activity 1 and Activity 2 Were Merged
+
+>Activity 2 was initially developed on top of Activity 1 rather than from a separate branch. As a result, when the database schema was updated to include user_id in the tasks table, most merge conflicts involved modifying existing queries to accommodate the new field.
+
+>For Activity 3, the schema was revised again to introduce support for lists. The following section explains how the updated tables relate to one another.
+
+**How the tables relate**
+
+- **Users and lists:** every user gets one hidden *personal* list when they register (`is_personal = 1`). Group lists are other rows in the same table (`is_personal = 0`) with an owner.
+- **Membership:** `list_members` holds one row per (list, user). The owner is also a member, and the personal list has only its owner. Every access check reads this table, so personal and group tasks follow the same rule.
+- **Tasks:** each task belongs to one list (`list_id`). `user_id` records who created it and is only used for the "Added by" label, not for access.
+- **Categories ("pages"):** belong to a user and apply to personal tasks. Group tasks have no category.
+- **Normalized:** user details live only in `users`. Other tables reference them by id.
+- **Foreign keys** are enforced (`PRAGMA foreign_keys = ON` on every connection):
+  - deleting a list deletes its tasks and memberships (`ON DELETE CASCADE`),
+  - deleting a page keeps its tasks and clears their category (`ON DELETE SET NULL`).
+
+## Access Control (UBAC)
+
+All checks run on the backend.
+
+**The membership check for tasks** (`get_task_for_user` in `lists/service.py`): a task is returned only if the logged-in user belongs to the list it lives in.
+
+```sql
+SELECT t.*, l.is_personal
+FROM tasks t
+JOIN lists l ON l.id = t.list_id
+JOIN list_members m ON m.list_id = l.id
+WHERE t.id = ? AND m.user_id = ?      -- task id from the URL, user id from the session
+```
+
+If no row comes back, the route calls `abort(404)`. Other helpers work the same way:
+
+| Helper | Checks | Failure |
+|---|---|---|
+| `get_task_for_user` | user is a member of the task's list | 404 |
+| `get_group_list_or_404` | user is a member of this group list | 404 |
+| `get_group_list_or_404(owner_only=True)` | user is a member **and** the owner | 404 if not a member, 403 if a member but not the owner |
+| `get_own_category_or_404` | the page (category) belongs to the user | 404 |
+| `get_tasks_for_view` | every list query joins `list_members` on the logged-in user | other lists never appear |
 
 ## Screenshots
 
