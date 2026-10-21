@@ -20,7 +20,7 @@
                 <div class="task-info">
                     <span class="task-name">{{ task['name']}}</span>
                     <span class="task-desc">{{ task['description']}}</span>
-                    <span class="task-category">{{ task['category']}}</span>
+                    <span class="task-category">{{ task['list_name']  or task['category'] or ''}}</span>
 
                 </div>
                 <time class="task-time">{{ task['time']}}</time>
