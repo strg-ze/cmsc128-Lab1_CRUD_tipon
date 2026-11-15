@@ -223,3 +223,5 @@ __marimo__/
 .pytest_cache/
 tests/
 pytest.ini
+.neon
+node_modules/

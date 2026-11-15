@@ -11,7 +11,7 @@ bp = Blueprint("account", __name__)
 #---------------helper functions-----------------
 def get_current_user(conn):
     return conn.execute(
-        "SELECT id, email, display_name, password_hash FROM users WHERE id = ?", (session["user_id"],),
+        "SELECT id, email, display_name, password_hash FROM users WHERE id = %s", (session["user_id"],),
     ).fetchone()
 
 def render_profile(user, details_errors=None, password_errors=None, form=None):
@@ -66,7 +66,7 @@ def profile_details():
         user = get_current_user(conn)
         if not errors:
             other = conn.execute(
-                "SELECT id FROM users WHERE email = ? AND id != ?", (email, user["id"])
+                "SELECT id FROM users WHERE email = %s AND id != %s", (email, user["id"])
             ).fetchone()
             if other:
                 errors["email"] = "Another account already uses this email."
@@ -75,7 +75,7 @@ def profile_details():
             return redirect_with_errors(details_errors=errors, form={"display_name": display_name, "email": email},)
 
         conn.execute(
-            "UPDATE users SET email = ?, display_name = ? WHERE id = ?",
+            "UPDATE users SET email = %s, display_name = %s WHERE id = %s",
             (email, display_name, user["id"]),
         )
         conn.commit()
@@ -111,7 +111,7 @@ def profile_password():
         if errors:
             return redirect_with_errors(password_errors=errors)
         conn.execute(
-            "UPDATE users SET password_hash = ? WHERE id = ?",
+            "UPDATE users SET password_hash = %s WHERE id = %s",
             (generate_password_hash(new), user["id"]),
         )
         conn.commit()

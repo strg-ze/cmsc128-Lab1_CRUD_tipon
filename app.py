@@ -43,8 +43,8 @@ def get_task_days_in_month(conn, year, month):
     rows = conn.execute(
         """SELECT DISTINCT t.due_Date
             FROM tasks t
-            JOIN list_members m ON m.list_id = t.list_id AND m.user_id = ?
-            WHERE t.due_date LIKE ? AND t.is_visible = 1""",
+            JOIN list_members m ON m.list_id = t.list_id AND m.user_id = %s
+            WHERE t.due_date LIKE %s AND t.is_visible = 1""",
             (session["user_id"], month_prefix),
     ).fetchall()
 
@@ -75,7 +75,7 @@ def get_visible_tasks(conn, where_clause, params):
                        CASE WHEN l.is_personal = 0 THEN l.name END AS list_name
                 FROM tasks t
                 JOIN lists l ON l.id = t.list_id
-                JOIN list_members m ON m.list_id = l.id AND m.user_id = ?
+                JOIN list_members m ON m.list_id = l.id AND m.user_id = %s
                 LEFT JOIN categories c ON c.id = t.category_id
                 WHERE t.is_visible = 1 AND {where_clause}"""
         return conn.execute(query, (session["user_id"],) + params).fetchall()
@@ -88,14 +88,14 @@ def dashboard():
     today = date.today()
     selected_date = request.args.get('date')
 
-    today_tasks = get_visible_tasks(conn, 'due_date = ?', (today.isoformat(),))
+    today_tasks = get_visible_tasks(conn, 'due_date = %s', (today.isoformat(),))
 
     if selected_date:
-        upcoming_tasks = get_visible_tasks(conn, 'due_date = ?', (selected_date,))
+        upcoming_tasks = get_visible_tasks(conn, 'due_date = %s', (selected_date,))
         upcoming_label = "Today" if selected_date == today.isoformat() else format_date(selected_date)
         show_single_day = True
     else:
-        upcoming_tasks = get_visible_tasks(conn, 'due_date > ?', (today.isoformat(),))
+        upcoming_tasks = get_visible_tasks(conn, 'due_date > %s', (today.isoformat(),))
         upcoming_label = "Upcoming"
         show_single_day = False
 
@@ -152,7 +152,7 @@ def tasks():
 
             conn.execute(
                 "INSERT INTO tasks (list_id, user_id, category_id, name, description, "
-                "priority, due_date, time, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "priority, due_date, time, tags) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     target_list,
                     user_id,                         
@@ -225,7 +225,7 @@ def delete_task(task_id):
     try:
         if get_task_for_user(conn, task_id, session["user_id"]) is None:
             abort(404)
-        conn.execute("UPDATE tasks SET is_visible = 0 WHERE id = ?", (task_id,))
+        conn.execute("UPDATE tasks SET is_visible = 0 WHERE id = %s", (task_id,))
         conn.commit()
     finally:
         conn.close()
@@ -248,8 +248,8 @@ def update_task(task_id):
             category_id = parse_category_id(conn, user_id, request.form.get("category_id", ""))
 
         conn.execute(
-            "UPDATE tasks SET name = ?, description = ?, priority = ?, due_date = ?, "
-            "time = ?, tags = ?, category_id = ? WHERE id = ?",
+            "UPDATE tasks SET name = %s, description = %s, priority = %s, due_date = %s, "
+            "time = %s, tags = %s, category_id = %s WHERE id = %s",
             (
                 request.form['task-name'], request.form['description'],
                 request.form['priority'], request.form['due-date'],
@@ -271,7 +271,7 @@ def complete_task(task_id):
         task = get_task_for_user(conn, task_id, session["user_id"])
         if task is None:
             abort(404)
-        conn.execute("UPDATE tasks SET completed = ? WHERE id = ?",
+        conn.execute("UPDATE tasks SET completed = %s WHERE id = %s",
                      (0 if task["completed"] else 1, task_id))
         conn.commit()
     finally:
@@ -288,7 +288,7 @@ def undo_task(task_id):
     try:
         if get_task_for_user(conn, task_id, session["user_id"]) is None:
             abort(404)
-        conn.execute("UPDATE tasks SET is_visible = 1 WHERE id = ?", (task_id,))
+        conn.execute("UPDATE tasks SET is_visible = 1 WHERE id = %s", (task_id,))
         conn.commit()
     finally:
         conn.close()

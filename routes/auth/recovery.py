@@ -31,7 +31,7 @@ def load_reset_user(conn, token): #returns the user a valid token belongs to
         return None
 
     user = conn.execute(
-        "SELECT id, password_hash FROM users WHERE id = ?", (data["uid"],)
+        "SELECT id, password_hash FROM users WHERE id = %s", (data["uid"],)
     ).fetchone()
 
     if user is None or data["fp"] != password_fingerprint(user["password_hash"]):
@@ -56,7 +56,7 @@ def forgot_password():
         else:
             conn = get_db_connection()
             user = conn.execute(
-                "SELECT id, password_hash FROM users WHERE email = ?", (email,)
+                "SELECT id, password_hash FROM users WHERE email = %s", (email,)
             ).fetchone()
             conn.close()
 
@@ -92,7 +92,7 @@ def reset_password(token):
             if not errors:
                 #update stored hash to replace old password
                 conn.execute(
-                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    "UPDATE users SET password_hash = %s WHERE id = %s",
                     (generate_password_hash(new), user["id"]),
                 )
                 conn.commit()

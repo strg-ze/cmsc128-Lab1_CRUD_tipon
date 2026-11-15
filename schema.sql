@@ -1,22 +1,22 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    display_name TEXT NOT NULL,    
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email CITEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
     password_hash TEXT NOT NULL
 );
 
 -- every user has exactly one hidden personal list
--- group lists are the other rows
 CREATE TABLE IF NOT EXISTS lists (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
     owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     is_personal INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS one_personal_list_per_user
-    ON lists(owner_id)
-    WHERE is_personal = 1;
+    ON lists(owner_id) WHERE is_personal = 1;
 
 CREATE TABLE IF NOT EXISTS list_members (
     list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
@@ -24,16 +24,15 @@ CREATE TABLE IF NOT EXISTS list_members (
     PRIMARY KEY (list_id, user_id)
 );
 
-CREATE TABLE if NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL COLLATE NOCASE,
-    UNIQUE(user_id, name)
+    name CITEXT NOT NULL,
+    UNIQUE (user_id, name)
 );
 
-
 CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     list_id INTEGER NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
@@ -47,4 +46,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     is_visible INTEGER DEFAULT 1
 );
 
+-- index foreign keys for faster lookups
 CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(list_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_category ON tasks(category_id);
+CREATE INDEX IF NOT EXISTS idx_members_user ON list_members(user_id);
